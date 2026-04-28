@@ -2,8 +2,15 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Tomás Surfer V2 - Profesional</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
+    <title>Tomás Surfer</title>
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#CCFF00">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Tomás Surfer">
+    <link rel="apple-touch-icon" href="/icons/icon.svg">
     <style>
         body {
             margin: 0;
@@ -1266,5 +1273,11 @@
         requestAnimationFrame(animate);
 
     </script>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+    <script src="/firebase-config.js"></script>
+    <script src="/auth.js"></script>
 </body>
 </html>
