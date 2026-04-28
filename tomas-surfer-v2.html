@@ -43,15 +43,15 @@
         }
 
         .screen {
-            background: rgba(20, 20, 30, 0.85);
+            background: rgba(20, 20, 30, 0.70);
             padding: 40px;
             border-radius: 15px;
             text-align: center;
             color: white;
             pointer-events: auto;
             box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-            backdrop-filter: blur(5px);
-            border: 1px solid rgba(255,255,255,0.1);
+            backdrop-filter: blur(3px);
+            border: 1px solid rgba(255,255,255,0.15);
             transition: opacity 0.3s ease;
         }
 
@@ -507,6 +507,12 @@
             
             sceneryGroup.add(obj);
             activeScenery.push(obj);
+        }
+
+        // Paisaje inicial visible en la pantalla de login
+        for (let i = 0; i < 500; i += 18) {
+            spawnScenery(i);
+            if (Math.random() > 0.45) spawnScenery(i + Math.random() * 12);
         }
 
         // --- OBSTACLES & COINS ---
