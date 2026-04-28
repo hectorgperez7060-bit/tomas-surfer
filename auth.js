@@ -15,7 +15,7 @@
       padding:14px 16px; font-size:15px; width:100%; box-sizing:border-box;
       border:1px solid rgba(204,255,0,0.22); border-radius:12px;
       background:rgba(255,255,255,0.04); color:#fff; outline:none;
-      font-family:Arial,sans-serif; transition:border-color .2s;`,
+      font-family:Arial,sans-serif; transition:border-color .2s; margin-bottom:0;`,
     btnPrimary: `
       padding:16px; font-size:16px; font-weight:900; letter-spacing:2px;
       background:#CCFF00; color:#000; border:none; border-radius:12px;
@@ -55,11 +55,11 @@
         </button>
         <div style="display:flex;align-items:center;gap:10px;">
           <div style="${S.sep}"></div>
-          <span style="font-size:12px;color:#444;">o</span>
+          <span style="font-size:12px;color:#888;">o</span>
           <div style="${S.sep}"></div>
         </div>
         <button type="button" id="ts-google" style="${S.btnGoogle}">${GOOGLE_SVG}</button>
-        <p style="text-align:center;font-size:13px;color:#555;margin:2px 0 0;">
+        <p style="text-align:center;font-size:13px;color:#aaa;margin:2px 0 0;">
           ${isLogin
             ? `¿No tenés cuenta? <span id="ts-toggle" style="${S.link}">Registrate</span>`
             : `¿Ya tenés cuenta? <span id="ts-toggle" style="${S.link}">Iniciá sesión</span>`}
@@ -67,45 +67,58 @@
       </form>`;
   };
 
-  // ── Create Overlay ───────────────────────────────────────
-  function createOverlay() {
-    const el = document.createElement('div');
-    el.id = 'ts-auth';
-    el.style.cssText = `
-      position:fixed; inset:0; z-index:100;
-      display:flex; flex-direction:column; align-items:center; justify-content:center;
-      background:rgba(4,4,18,0.97); backdrop-filter:blur(16px);
-      color:#fff; overflow-y:auto; padding:20px; box-sizing:border-box;`;
-    el.innerHTML = `
-      <div style="display:flex;flex-direction:column;align-items:center;width:100%;max-width:340px;">
-        <img src="/icons/icon.svg" alt="Tomás Surfer"
-          style="width:82px;height:82px;margin-bottom:10px;"
-          onerror="this.style.display='none'">
-        <div style="
-          font-family:'Arial Black',Arial,sans-serif;
-          font-size:clamp(36px,10vw,56px); font-weight:900;
-          color:#CCFF00; letter-spacing:-2px; line-height:1;
-          text-shadow:0 0 28px rgba(204,255,0,0.45);">TOM&#193;S</div>
-        <div style="
-          font-family:'Arial Black',Arial,sans-serif;
-          font-size:clamp(15px,4vw,21px); font-weight:900;
-          color:#fff; letter-spacing:10px; opacity:0.65;
-          margin-bottom:28px;">SURFER</div>
+  // ── Inject auth form into the existing login screen ──────
+  function injectAuthForm() {
+    const loginScreen = document.getElementById('login-screen');
+    if (!loginScreen) return null;
 
-        <div id="ts-err" style="
-          display:none; color:#ff4455; font-size:13px;
-          margin-bottom:14px; text-align:center;
-          padding:9px 14px; border-radius:10px;
-          background:rgba(255,68,85,0.1);
-          border:1px solid rgba(255,68,85,0.28);
-          width:100%; box-sizing:border-box;"></div>
+    // Hide the game-form elements, keep only the h1 title
+    const toHide = [
+      document.getElementById('alias-input'),
+      document.getElementById('char-name-display'),
+      document.getElementById('start-btn'),
+      loginScreen.querySelector('h3'),
+      loginScreen.querySelector('.character-selector'),
+      loginScreen.querySelector('.instructions'),
+    ];
+    toHide.forEach(el => { if (el) el.style.display = 'none'; });
 
-        <div id="ts-form-wrap" style="width:100%;">
-          ${formHTML('login')}
-        </div>
+    // Insert auth wrap after h1
+    const wrap = document.createElement('div');
+    wrap.id = 'ts-auth-wrap';
+    wrap.style.cssText = 'width:100%;';
+    wrap.innerHTML = `
+      <div id="ts-err" style="
+        display:none; color:#ff4455; font-size:13px;
+        margin-bottom:14px; text-align:center;
+        padding:9px 14px; border-radius:10px;
+        background:rgba(255,68,85,0.1);
+        border:1px solid rgba(255,68,85,0.28);
+        width:100%; box-sizing:border-box;"></div>
+      <div id="ts-form-wrap" style="width:100%;">
+        ${formHTML('login')}
       </div>`;
-    document.body.appendChild(el);
-    return el;
+    loginScreen.appendChild(wrap);
+
+    return loginScreen;
+  }
+
+  function showGameForm() {
+    const wrap = document.getElementById('ts-auth-wrap');
+    if (wrap) wrap.remove();
+
+    const loginScreen = document.getElementById('login-screen');
+    if (!loginScreen) return;
+
+    const toShow = [
+      document.getElementById('alias-input'),
+      document.getElementById('char-name-display'),
+      document.getElementById('start-btn'),
+      loginScreen.querySelector('h3'),
+      loginScreen.querySelector('.character-selector'),
+      loginScreen.querySelector('.instructions'),
+    ];
+    toShow.forEach(el => { if (el) el.style.display = ''; });
   }
 
   // ── Helpers ─────────────────────────────────────────────
@@ -116,14 +129,6 @@
   function hideErr() {
     const el = document.getElementById('ts-err');
     if (el) el.style.display = 'none';
-  }
-
-  function hideOverlay() {
-    const el = document.getElementById('ts-auth');
-    if (!el) return;
-    el.style.transition = 'opacity .4s';
-    el.style.opacity = '0';
-    setTimeout(() => { if (el.parentNode) el.parentNode.removeChild(el); }, 420);
   }
 
   function errMsg(code) {
@@ -141,31 +146,28 @@
     })[code] || 'Ocurrió un error. Intentá de nuevo.';
   }
 
-  // ── Wire up a form (called each time form HTML is set) ──
+  // ── Wire up a form ───────────────────────────────────────
   let currentMode = 'login';
 
-  function wireForm(auth, overlay) {
-    const form   = overlay.querySelector('#ts-form');
-    const submit = overlay.querySelector('#ts-submit');
-    const google = overlay.querySelector('#ts-google');
-    const toggle = overlay.querySelector('#ts-toggle');
+  function wireForm(auth, container) {
+    const form   = container.querySelector('#ts-form');
+    const submit = container.querySelector('#ts-submit');
+    const google = container.querySelector('#ts-google');
+    const toggle = container.querySelector('#ts-toggle');
 
-    // Input focus glow
-    overlay.querySelectorAll('input').forEach(inp => {
+    container.querySelectorAll('input').forEach(inp => {
       inp.addEventListener('focus', () => inp.style.borderColor = 'rgba(204,255,0,0.65)');
       inp.addEventListener('blur',  () => inp.style.borderColor = 'rgba(204,255,0,0.22)');
     });
 
-    // Button press scale
     submit.addEventListener('mousedown', () => { submit.style.transform = 'scale(0.97)'; });
     submit.addEventListener('mouseup',   () => { submit.style.transform = ''; });
 
-    // Submit
     form.addEventListener('submit', async e => {
       e.preventDefault();
       hideErr();
-      const email = overlay.querySelector('#ts-email').value.trim();
-      const pass  = overlay.querySelector('#ts-pass').value;
+      const email = container.querySelector('#ts-email').value.trim();
+      const pass  = container.querySelector('#ts-pass').value;
       const label = submit.textContent;
       submit.textContent = '...'; submit.disabled = true;
       try {
@@ -180,7 +182,6 @@
       }
     });
 
-    // Google
     const googleAuth = async () => {
       hideErr();
       try {
@@ -191,13 +192,12 @@
     };
     google.addEventListener('click', googleAuth);
 
-    // Toggle login ↔ register
     toggle.addEventListener('click', () => {
       currentMode = currentMode === 'login' ? 'register' : 'login';
       hideErr();
-      const wrap = overlay.querySelector('#ts-form-wrap');
+      const wrap = container.querySelector('#ts-form-wrap');
       wrap.innerHTML = formHTML(currentMode);
-      wireForm(auth, overlay);
+      wireForm(auth, container);
     });
   }
 
@@ -246,7 +246,6 @@
     if (navigator.share) {
       navigator.share(payload).catch(() => {});
     } else {
-      // Fallback: copy to clipboard
       const txt = `${payload.text}\n${payload.url}`;
       navigator.clipboard
         ? navigator.clipboard.writeText(txt).then(() => alert('¡Link copiado! 📋'))
@@ -254,12 +253,11 @@
     }
   }
 
-  // ── Install prompt (Add to Home Screen) ─────────────────
+  // ── Install prompt ───────────────────────────────────────
   let deferredPrompt = null;
   window.addEventListener('beforeinstallprompt', e => {
     e.preventDefault();
     deferredPrompt = e;
-    // Show install hint in the share button tooltip
     const shareBtn = document.getElementById('ts-share');
     if (shareBtn) shareBtn.title = 'Compartir o instalar';
   });
@@ -268,32 +266,25 @@
   function init() {
     injectShareButton();
 
-    // If Firebase not initialized → skip auth, go straight to game
     if (typeof firebase === 'undefined' || !firebase.apps.length) {
       return;
     }
 
-    const auth    = firebase.auth();
-    const overlay = createOverlay();
+    const auth      = firebase.auth();
+    const container = injectAuthForm();
+    if (!container) return;
 
-    // Listen to auth state ASAP
     const unsub = auth.onAuthStateChanged(user => {
-      unsub(); // only needed once to check initial state
+      unsub();
       if (user) {
-        hideOverlay();
+        showGameForm();
       } else {
-        // Show the login form with a small fade-in
-        wireForm(auth, overlay);
-        overlay.style.opacity = '0';
-        overlay.style.transition = 'opacity .3s';
-        requestAnimationFrame(() => { overlay.style.opacity = '1'; });
+        wireForm(auth, container);
       }
 
-      // Keep listening for subsequent sign-in
-      auth.onAuthStateChanged(u => { if (u) hideOverlay(); });
+      auth.onAuthStateChanged(u => { if (u) showGameForm(); });
     });
   }
 
-  // DOM is already ready (scripts at end of body)
   init();
 })();
