@@ -1,0 +1,19 @@
+# Dependencies
+node_modules/
+
+# System
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Environment / secrets
+.env
+.env.local
+.env.*.local
+
+# Editor
+.vscode/settings.json
+.idea/
+
+# Logs
+*.log

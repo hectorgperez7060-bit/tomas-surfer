@@ -1,0 +1,66 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Background -->
+  <rect width="512" height="512" rx="80" fill="#040412"/>
+
+  <!-- Tunnel perspective lines -->
+  <g stroke="#CCFF00" stroke-width="1.5" fill="none" opacity="0.18">
+    <line x1="256" y1="145" x2="20"  y2="490"/>
+    <line x1="256" y1="145" x2="492" y2="490"/>
+    <line x1="256" y1="145" x2="105" y2="512"/>
+    <line x1="256" y1="145" x2="407" y2="512"/>
+    <line x1="256" y1="145" x2="170" y2="512"/>
+    <line x1="256" y1="145" x2="342" y2="512"/>
+  </g>
+
+  <!-- Vanishing point glow -->
+  <circle cx="256" cy="145" r="55" fill="#CCFF00" opacity="0.05"/>
+  <circle cx="256" cy="145" r="18" fill="#CCFF00" opacity="0.13"/>
+
+  <!-- Neon floor line -->
+  <rect x="52" y="340" width="408" height="4" rx="2" fill="#CCFF00" opacity="0.55"/>
+  <rect x="52" y="340" width="408" height="8" rx="4" fill="#CCFF00" opacity="0.06"/>
+
+  <!-- Running figure -->
+  <g fill="#CCFF00" transform="translate(256,215)">
+    <!-- Helmet -->
+    <circle cx="0" cy="-50" r="26"/>
+    <!-- Visor -->
+    <rect x="-20" y="-61" width="40" height="15" rx="3" fill="#040412"/>
+    <rect x="-20" y="-61" width="40" height="15" rx="3" fill="#CCFF00" opacity="0.38"/>
+    <!-- Body outline -->
+    <rect x="-19" y="-22" width="38" height="50" rx="6" fill="#1d1e32"/>
+    <rect x="-19" y="-22" width="38" height="50" rx="6" fill="none" stroke="#CCFF00" stroke-width="2.5"/>
+    <!-- Shoulder pads -->
+    <rect x="-33" y="-22" width="14" height="7" rx="3"/>
+    <rect x="19"  y="-22" width="14" height="7" rx="3"/>
+    <!-- Back arm -->
+    <line x1="-19" y1="-10" x2="-42" y2="26" stroke="#040412" stroke-width="4"  stroke-linecap="round"/>
+    <line x1="-19" y1="-10" x2="-42" y2="26" stroke="#CCFF00" stroke-width="13" stroke-linecap="round"/>
+    <!-- Front arm -->
+    <line x1="19"  y1="-10" x2="40"  y2="20" stroke="#040412" stroke-width="4"  stroke-linecap="round"/>
+    <line x1="19"  y1="-10" x2="40"  y2="20" stroke="#CCFF00" stroke-width="13" stroke-linecap="round"/>
+    <!-- Back leg -->
+    <line x1="-9"  y1="28"  x2="-26" y2="72" stroke="#040412" stroke-width="4"  stroke-linecap="round"/>
+    <line x1="-9"  y1="28"  x2="-26" y2="72" stroke="#CCFF00" stroke-width="15" stroke-linecap="round"/>
+    <!-- Back shoe -->
+    <rect x="-42" y="66" width="28" height="12" rx="4"/>
+    <!-- Front leg -->
+    <line x1="9"   y1="28"  x2="28"  y2="66" stroke="#040412" stroke-width="4"  stroke-linecap="round"/>
+    <line x1="9"   y1="28"  x2="28"  y2="66" stroke="#CCFF00" stroke-width="15" stroke-linecap="round"/>
+    <!-- Front shoe -->
+    <rect x="16" y="60" width="28" height="12" rx="4"/>
+  </g>
+
+  <!-- TOMÁS -->
+  <text x="256" y="413"
+    font-family="'Arial Black', Arial, sans-serif"
+    font-size="88" font-weight="900"
+    fill="#CCFF00" text-anchor="middle">TOM&#193;S</text>
+
+  <!-- SURFER -->
+  <text x="256" y="478"
+    font-family="'Arial Black', Arial, sans-serif"
+    font-size="50" font-weight="900"
+    fill="white" fill-opacity="0.72"
+    text-anchor="middle" letter-spacing="12">SURFER</text>
+</svg>
