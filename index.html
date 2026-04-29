@@ -154,6 +154,7 @@
     </style>
     <!-- Import Three.js -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 </head>
 <body>
 
@@ -262,6 +263,73 @@
         const container = document.getElementById('game-container');
         const scene = new THREE.Scene();
         
+        // --- ASSET MANAGER (Modelos 3D Reales) ---
+        const assets = {
+            player: null,
+            train: null,
+            car: null
+        };
+        let playerMixer = null;
+        const gltfLoader = new THREE.GLTFLoader();
+
+        function loadModel(path, key) {
+            gltfLoader.load(path, (gltf) => {
+                assets[key] = gltf.scene;
+                // Si el modelo tiene sombras
+                assets[key].traverse((node) => {
+                    if (node.isMesh) {
+                        node.castShadow = true;
+                        node.receiveShadow = true;
+                    }
+                });
+
+                if (key === 'player') {
+                    // Remover las piezas de bloques
+                    while(playerGroup.children.length > 0){ 
+                        playerGroup.remove(playerGroup.children[0]); 
+                    }
+                    // Escalar y orientar el personaje (Soldier.glb requiere un ajuste)
+                    assets.player.scale.set(1.2, 1.2, 1.2);
+                    assets.player.rotation.y = Math.PI; // Mirar hacia adelante (+Z)
+                    assets.player.position.y = 0;
+                    playerGroup.add(assets.player);
+
+                    if (gltf.animations && gltf.animations.length > 0) {
+                        playerMixer = new THREE.AnimationMixer(assets.player);
+                        
+                        // Buscar la animación de correr ('Run' o 'Running')
+                        let runAnim = gltf.animations[0];
+                        gltf.animations.forEach(anim => {
+                            if (anim.name.toLowerCase().includes('run')) {
+                                runAnim = anim;
+                            }
+                        });
+                        
+                        const action = playerMixer.clipAction(runAnim);
+                        action.play();
+                    }
+                } else if (key === 'car') {
+                    // Achicar drásticamente el camión para que no ocupe toda la pantalla
+                    assets.car.scale.set(0.5, 0.5, 0.5);
+                } else if (key === 'train') {
+                    assets.train.scale.set(1.5, 1.5, 1.5);
+                }
+
+                console.log(`Modelo ${key} cargado exitosamente desde la nube.`);
+            }, undefined, (error) => {
+                console.log(`No se encontró el modelo ${path}. Usando bloques por defecto.`);
+            });
+        }
+
+        // Cargamos modelos directamente desde repositorios públicos para no tener que descargar nada localmente
+        const PLAYER_URL = 'https://raw.githubusercontent.com/mrdoob/three.js/master/examples/models/gltf/Soldier.glb';
+        const TRAIN_URL = 'https://raw.githubusercontent.com/webaverse/assets/master/train.glb';
+        const CAR_URL = 'https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/CesiumMilkTruck/glTF-Binary/CesiumMilkTruck.glb';
+
+        loadModel(PLAYER_URL, 'player');
+        loadModel(TRAIN_URL, 'train');
+        loadModel(CAR_URL, 'car');
+        
         scene.background = new THREE.Color(0x87CEEB); 
         scene.fog = new THREE.Fog(0x87CEEB, 40, 150); 
 
@@ -302,23 +370,32 @@
         const trackFloorGeo = new THREE.PlaneGeometry(12, 800);
         const trackFloorMat = new THREE.MeshStandardMaterial({ color: 0x444444, roughness: 0.9 });
         const trackFloor = new THREE.Mesh(trackFloorGeo, trackFloorMat);
-        trackFloor.rotation.x = -Math.PI / 2;
-        trackFloor.position.z = 300;
-        trackFloor.receiveShadow = true;
-        trackGroup.add(trackFloor);
+        const asphaltGeo = new THREE.PlaneGeometry(800, 800);
+        const asphaltMat = new THREE.MeshStandardMaterial({ color: 0x1a1a1a, roughness: 0.9 }); // Asfalto oscuro
+        const asphaltFloor = new THREE.Mesh(asphaltGeo, asphaltMat);
+        asphaltFloor.rotation.x = -Math.PI / 2;
+        asphaltFloor.position.y = -0.05; 
+        asphaltFloor.position.z = 300;
+        asphaltFloor.receiveShadow = true;
+        trackGroup.add(asphaltFloor);
 
-        // Suelo exterior (Pasto hermoso)
-        const grassFloorGeo = new THREE.PlaneGeometry(500, 800);
-        const grassFloorMat = new THREE.MeshStandardMaterial({ color: 0x4caf50, roughness: 1.0 });
-        const grassFloor = new THREE.Mesh(grassFloorGeo, grassFloorMat);
-        grassFloor.rotation.x = -Math.PI / 2;
-        grassFloor.position.y = -0.05; // Un poco por debajo de las vías
-        grassFloor.position.z = 300;
-        grassFloor.receiveShadow = true;
-        trackGroup.add(grassFloor);
+        // Veredas (Aceras) a los costados
+        const sidewalkGeo = new THREE.BoxGeometry(20, 0.2, 800);
+        const sidewalkMat = new THREE.MeshStandardMaterial({ color: 0x555555, roughness: 0.8 });
+        
+        const sidewalkLeft = new THREE.Mesh(sidewalkGeo, sidewalkMat);
+        sidewalkLeft.position.set(-15, 0.05, 300);
+        sidewalkLeft.receiveShadow = true;
+        trackGroup.add(sidewalkLeft);
+
+        const sidewalkRight = new THREE.Mesh(sidewalkGeo, sidewalkMat);
+        sidewalkRight.position.set(15, 0.05, 300);
+        sidewalkRight.receiveShadow = true;
+        trackGroup.add(sidewalkRight);
 
         function createTrack(x) {
-            const trackMat = new THREE.MeshStandardMaterial({ color: 0x222222, metalness: 0.8, roughness: 0.4 });
+            // Vías de tren
+            const trackMat = new THREE.MeshStandardMaterial({ color: 0x888888, metalness: 0.9, roughness: 0.2 });
             const railGeo = new THREE.BoxGeometry(0.2, 0.1, 800);
             
             const rail1 = new THREE.Mesh(railGeo, trackMat);
@@ -484,70 +561,41 @@
             return group;
         }
 
-        function createBillboard() {
+        function createBillboard(side) {
             const group = new THREE.Group();
+            const H = 4; // Altura base
 
-            // Canvas con el diseño del cartel
-            const cv = document.createElement('canvas');
-            cv.width = 512; cv.height = 256;
-            const cx = cv.getContext('2d');
+            // Poste central metálico
+            const poleGeo = new THREE.CylinderGeometry(0.3, 0.3, 5, 16);
+            const poleMat = new THREE.MeshStandardMaterial({ color: 0x333333, metalness: 0.8, roughness: 0.2 });
+            const pole = new THREE.Mesh(poleGeo, poleMat);
+            pole.position.set(0, H - 2.5, 0);
+            pole.castShadow = true;
+            group.add(pole);
 
-            // Fondo azul
-            cx.fillStyle = '#0a2a6e';
-            cx.fillRect(0, 0, 512, 256);
-            // Franja naranja superior
-            cx.fillStyle = '#f5a800';
-            cx.fillRect(0, 0, 512, 85);
-            // Título
-            cx.fillStyle = '#0a2a6e';
-            cx.font = 'bold 52px Impact, Arial Black, Arial';
-            cx.textAlign = 'center';
-            cx.textBaseline = 'middle';
-            cx.fillText('ELECTRICIDAD.G.O', 256, 44);
-            // Subtítulo
-            cx.fillStyle = '#ffffff';
-            cx.font = 'bold 34px Arial';
-            cx.fillText('SOLUCIONES ELECTRICAS', 256, 140);
-            // Línea separadora
-            cx.fillStyle = '#f5a800';
-            cx.fillRect(30, 165, 452, 3);
-            // Círculo WhatsApp
-            cx.fillStyle = '#25D366';
-            cx.beginPath();
-            cx.arc(80, 210, 28, 0, Math.PI * 2);
-            cx.fill();
-            cx.fillStyle = '#ffffff';
-            cx.font = 'bold 26px Arial';
-            cx.textAlign = 'center';
-            cx.fillText('W', 80, 213);
-            // Número
-            cx.fillStyle = '#ffffff';
-            cx.font = 'bold 38px Arial Black, Arial';
-            cx.textAlign = 'left';
-            cx.fillText('1157007060', 125, 220);
-            // Borde blanco
-            cx.strokeStyle = '#ffffff';
-            cx.lineWidth = 6;
-            cx.strokeRect(3, 3, 506, 250);
+            // Imagen del cartel (Textura)
+            const textureLoader = new THREE.TextureLoader();
+            const texture = textureLoader.load('textura_cartel.png'); 
+            
+            const matFrente = new THREE.MeshBasicMaterial({ map: texture, transparent: true });
+            const matGris = new THREE.MeshStandardMaterial({ color: 0x222222, metalness: 0.5 }); // Marco más oscuro y metálico
 
-            const tex = new THREE.CanvasTexture(cv);
-            tex.needsUpdate = true;
+            const materials = [
+                matGris, matGris, matGris, matGris, matFrente, matGris 
+            ];
 
-            // DoubleSide: visible tanto desde -Z como desde +Z
-            const planeMat = new THREE.MeshBasicMaterial({ map: tex, side: THREE.DoubleSide });
-            const plane = new THREE.Mesh(new THREE.PlaneGeometry(8, 4), planeMat);
-            plane.position.y = 6;
-            group.add(plane);
+            // Proporciones más realistas (más ancho que alto)
+            const geometry = new THREE.BoxGeometry(8, 4, 0.3); 
+            const mesh = new THREE.Mesh(geometry, materials);
+            
+            mesh.rotation.y = Math.PI;
+            mesh.position.set(0, H + 0.5, 0); // Elevado sobre el poste
+            mesh.castShadow = true;
+            
+            group.add(mesh);
 
-            // Postes
-            const poleMat = new THREE.MeshBasicMaterial({ color: 0x555555 });
-            const poleGeo = new THREE.CylinderGeometry(0.12, 0.15, 6);
-            [-2.5, 2.5].forEach(x => {
-                const pole = new THREE.Mesh(poleGeo, poleMat);
-                pole.position.set(x, 3, 0);
-                group.add(pole);
-            });
-
+            // Rotación leve hacia el carril central
+            group.rotation.y = side === 1 ? Math.PI / 15 : -Math.PI / 15;
             return group;
         }
 
@@ -591,6 +639,55 @@
         // Trenes mejorados (Con ruedas, ventanas obvias y forma de tren)
         function createTrain() {
             const group = new THREE.Group();
+
+            if (assets.train) {
+                const trainModel = assets.train.clone();
+                
+                // 1. Resetear cualquier escala/rotación previa para medir bien
+                trainModel.scale.set(1, 1, 1);
+                trainModel.rotation.set(0, 0, 0);
+
+                // 2. Medir las dimensiones reales del modelo 3D
+                let box = new THREE.Box3().setFromObject(trainModel);
+                let size = box.getSize(new THREE.Vector3());
+                
+                // 3. Si el tren es más ancho que largo, significa que está atravesado. Lo rotamos.
+                if (size.x > size.z) {
+                    trainModel.rotation.y = Math.PI / 2;
+                    box = new THREE.Box3().setFromObject(trainModel); // Recalcular medidas
+                    size = box.getSize(new THREE.Vector3());
+                }
+                
+                // 4. Calcular el factor de escala para que el ancho encaje perfecto en el carril (2.4 unidades)
+                const scaleFactor = 2.4 / size.x;
+                trainModel.scale.set(scaleFactor, scaleFactor, scaleFactor);
+                
+                // 5. Inyectar colores aleatorios a la carrocería del tren
+                const colorHex = config.trainColors[Math.floor(Math.random() * config.trainColors.length)];
+                trainModel.traverse((child) => {
+                    if (child.isMesh && child.material) {
+                        // Heurística: Si el material es claro (no es rueda o ventana negra), pintarlo
+                        // Creamos un color de Three para comparar su claridad (brillo)
+                        let matColor = child.material.color || new THREE.Color(0xffffff);
+                        if (matColor.r > 0.2 || matColor.g > 0.2 || matColor.b > 0.2) {
+                            child.material = child.material.clone();
+                            child.material.color.setHex(colorHex);
+                        }
+                    }
+                });
+
+                // 6. Medir la altura final y ajustar la posición para que toque el suelo
+                box = new THREE.Box3().setFromObject(trainModel);
+                const finalHeight = box.max.y - box.min.y;
+                trainModel.position.y = -box.min.y; // Elevar si el origen del modelo está mal centrado
+
+                group.add(trainModel);
+                
+                // 6. Asignar la altura dinámica para que Tomás pueda correr exactamente por el techo
+                group.userData = { type: 'train', height: finalHeight };
+                return group;
+            }
+
             const color = config.trainColors[Math.floor(Math.random() * config.trainColors.length)];
             
             // Cuerpo principal
@@ -760,16 +857,69 @@
 
         function spawnVehicle(xPos, zPos) {
             const lane = config.lanes[Math.floor(Math.random() * 3)];
-            const vehGeo = new THREE.BoxGeometry(1.5, 1, 3);
-            const vehMat = new THREE.MeshStandardMaterial({ color: 0xff0000, roughness: 0.5 });
-            const veh = new THREE.Mesh(vehGeo, vehMat);
+            const group = new THREE.Group();
             
-            veh.position.set(lane, 15, zPos); 
-            veh.castShadow = true;
-            veh.userData = { type: 'rock', vy: -40, targetY: 0.5 }; // acts as a fast obstacle
+            if (assets.car) {
+                const carModel = assets.car.clone();
+                carModel.scale.set(1.5, 1.5, 1.5);
+                group.add(carModel);
+                group.position.set(lane, 15, zPos); 
+                group.userData = { type: 'rock', vy: -40, targetY: 0 }; 
+                objectPool.add(group);
+                activeObjects.push(group);
+                return;
+            }
+
+            const colors = [0xff0000, 0x0000ff, 0x00ff00, 0xffff00, 0xffffff, 0x111111];
+            const color = colors[Math.floor(Math.random() * colors.length)];
             
-            objectPool.add(veh);
-            activeObjects.push(veh);
+            // Chasis del auto
+            const chassisGeo = new THREE.BoxGeometry(1.8, 0.8, 3.8);
+            const chassisMat = new THREE.MeshStandardMaterial({ color: color, roughness: 0.3, metalness: 0.4 });
+            const chassis = new THREE.Mesh(chassisGeo, chassisMat);
+            chassis.position.y = 0.7;
+            chassis.castShadow = true;
+            group.add(chassis);
+
+            // Cabina (vidrios)
+            const cabinGeo = new THREE.BoxGeometry(1.4, 0.6, 2.0);
+            const cabinMat = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.1 });
+            const cabin = new THREE.Mesh(cabinGeo, cabinMat);
+            cabin.position.set(0, 1.4, -0.2);
+            cabin.castShadow = true;
+            group.add(cabin);
+
+            // Ruedas
+            const wheelGeo = new THREE.CylinderGeometry(0.4, 0.4, 1.9, 16);
+            wheelGeo.rotateZ(Math.PI / 2);
+            const wheelMat = new THREE.MeshStandardMaterial({ color: 0x222222 });
+            
+            const w1 = new THREE.Mesh(wheelGeo, wheelMat);
+            w1.position.set(0, 0.4, 1.3);
+            w1.castShadow = true;
+            group.add(w1);
+
+            const w2 = new THREE.Mesh(wheelGeo, wheelMat);
+            w2.position.set(0, 0.4, -1.3);
+            w2.castShadow = true;
+            group.add(w2);
+
+            // Faros amarillos
+            const lightGeo = new THREE.BoxGeometry(0.4, 0.2, 0.1);
+            const lightMat = new THREE.MeshBasicMaterial({ color: 0xffffaa });
+            const l1 = new THREE.Mesh(lightGeo, lightMat);
+            l1.position.set(-0.6, 0.9, 1.91);
+            group.add(l1);
+            
+            const l2 = new THREE.Mesh(lightGeo, lightMat);
+            l2.position.set(0.6, 0.9, 1.91);
+            group.add(l2);
+
+            group.position.set(lane, 15, zPos); 
+            group.userData = { type: 'rock', vy: -40, targetY: 0 }; // targetY = 0 para que toque el piso
+            
+            objectPool.add(group);
+            activeObjects.push(group);
         }
 
         function spawnRock(xPos, zPos) {
@@ -971,10 +1121,13 @@
             if (state.isInvincible) return;
 
             state.lives--;
-            state.scoreWithoutMistakes = 0;
-            state.monstersDefeated = 0;
-            state.monsterActive = false;
-            monsterGroup.visible = false;
+            // NO reiniciar monstersDefeated para que no vuelva al monstruo 1
+            // Si el jefe estaba activo, lo escondemos un rato para dar respiro
+            if (state.monsterActive) {
+                state.monsterActive = false;
+                monsterGroup.visible = false;
+                state.monsterTimer = 5; // Darle 5 segundos de paz
+            }
             updateHUD();
 
             if (state.lives <= 0) {
@@ -1068,8 +1221,20 @@
             state.scoreWithoutMistakes += moveZ * 0.1;
 
             playerGroup.position.z += moveZ;
-            camera.position.z = playerGroup.position.z - 8;
-            camera.position.x = playerGroup.position.x * 0.3; 
+            
+            // --- CÁMARA ESTILO GTA (Tercera persona dinámica) ---
+            // La cámara sigue al jugador de cerca y más bajo
+            camera.position.z = playerGroup.position.z - 7.5;
+            camera.position.y = 3.8 + (playerGroup.position.y * 0.2); // Sube un poco si el jugador salta
+            camera.position.x = playerGroup.position.x * 0.4; // Se desplaza un poco lateralmente
+            
+            // La cámara mira un punto lejano adelante del jugador para dar perspectiva
+            const lookTarget = new THREE.Vector3(
+                playerGroup.position.x * 0.2, 
+                playerGroup.position.y + 1.5, 
+                playerGroup.position.z + 18
+            );
+            camera.lookAt(lookTarget);
 
             // Hacer que la luz siga al jugador para que las sombras no se corten
             dirLight.position.z = playerGroup.position.z - 10;
@@ -1108,18 +1273,23 @@
                 playerGroup.scale.y = 1.0;
             }
 
-            // Animación de correr
-            if (!state.isJumping && state.groundY === playerGroup.position.y) {
-                const runCycle = Math.sin(time * 0.015);
-                playerGroup.children[3].rotation.x = runCycle * 0.5; // Brazo izq
-                playerGroup.children[4].rotation.x = -runCycle * 0.5; // Brazo der
-                playerGroup.children[5].rotation.x = -runCycle * 0.5; // Pierna izq
-                playerGroup.children[6].rotation.x = runCycle * 0.5; // Pierna der
-            } else {
-                playerGroup.children[3].rotation.x = -0.5; 
-                playerGroup.children[4].rotation.x = -0.5;
-                playerGroup.children[5].rotation.x = 0;
-                playerGroup.children[6].rotation.x = 0;
+            if (playerMixer && !state.isJumping && state.groundY === playerGroup.position.y) {
+                // Actualizar animación del modelo humano
+                playerMixer.update(delta);
+            } else if (!playerMixer) {
+                // Animación de correr para el personaje de bloques (fallback)
+                if (!state.isJumping && state.groundY === playerGroup.position.y) {
+                    const runCycle = Math.sin(time * 0.015);
+                    if (playerGroup.children[3]) playerGroup.children[3].rotation.x = runCycle * 0.5; // Brazo izq
+                    if (playerGroup.children[4]) playerGroup.children[4].rotation.x = -runCycle * 0.5; // Brazo der
+                    if (playerGroup.children[5]) playerGroup.children[5].rotation.x = -runCycle * 0.5; // Pierna izq
+                    if (playerGroup.children[6]) playerGroup.children[6].rotation.x = runCycle * 0.5; // Pierna der
+                } else {
+                    if (playerGroup.children[3]) playerGroup.children[3].rotation.x = -0.5; 
+                    if (playerGroup.children[4]) playerGroup.children[4].rotation.x = -0.5;
+                    if (playerGroup.children[5]) playerGroup.children[5].rotation.x = 0;
+                    if (playerGroup.children[6]) playerGroup.children[6].rotation.x = 0;
+                }
             }
 
             playerBox.setFromObject(playerGroup);
@@ -1233,30 +1403,30 @@
 
             // --- Lógica de Monstruos ---
             if (!state.monsterActive) {
-                if (state.monstersDefeated === 0 && state.scoreWithoutMistakes > 200) {
+                if (state.monstersDefeated === 0 && state.score > 300) {
                     state.monsterActive = true;
                     state.monsterType = 1;
-                    state.monsterLife = 10;
+                    state.monsterLife = 3; // Menos vida para que sea posible ganarle
                     rockMonsterMesh.visible = true;
                     tentacleMonsterMesh.visible = false;
                     ufoMonsterMesh.visible = false;
                     monsterGroup.visible = true;
                     monsterGroup.position.set(0, 8, playerGroup.position.z + 100);
                     updateHUD();
-                } else if (state.monstersDefeated === 1 && state.scoreWithoutMistakes > 800) { 
+                } else if (state.monstersDefeated === 1 && state.score > 800) { 
                     state.monsterActive = true;
                     state.monsterType = 2;
-                    state.monsterLife = 20;
+                    state.monsterLife = 5;
                     rockMonsterMesh.visible = false;
                     tentacleMonsterMesh.visible = true;
                     ufoMonsterMesh.visible = false;
                     monsterGroup.visible = true;
                     monsterGroup.position.set(0, 8, playerGroup.position.z + 100);
                     updateHUD();
-                } else if (state.monstersDefeated === 2 && state.scoreWithoutMistakes > 1500) {
+                } else if (state.monstersDefeated === 2 && state.score > 1500) {
                     state.monsterActive = true;
                     state.monsterType = 3;
-                    state.monsterLife = 30;
+                    state.monsterLife = 7;
                     rockMonsterMesh.visible = false;
                     tentacleMonsterMesh.visible = false;
                     ufoMonsterMesh.visible = true;
