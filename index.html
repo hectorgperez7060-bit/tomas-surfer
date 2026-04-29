@@ -962,6 +962,9 @@
         let spawnTimer = 0;
         let spawnSceneryTimer = 0;
 
+        // Cartel fijo — se repositiona en cada partida
+        let fixedBillboard = null;
+
         function updateHUD() {
             document.getElementById('hud-score').innerText = Math.floor(state.score);
             document.getElementById('hud-coins').innerText = state.coins;
@@ -1051,12 +1054,12 @@
                 if (Math.random() > 0.5) spawnScenery(i + Math.random() * 10);
             }
 
-            // Cartel inicial visible al comenzar
-            const b0 = createBillboard();
-            b0.position.set(9, 0, 70);
-            b0.rotation.y = Math.PI / 10;
-            sceneryGroup.add(b0);
-            activeScenery.push(b0);
+            // Cartel fijo directamente en la escena (no en sceneryGroup para que no se borre)
+            if (fixedBillboard) scene.remove(fixedBillboard);
+            fixedBillboard = createBillboard();
+            fixedBillboard.position.set(9, 0, 35);
+            fixedBillboard.rotation.y = Math.PI / 10;
+            scene.add(fixedBillboard);
 
             document.getElementById('hud-alias').innerText = state.alias;
             document.getElementById('hud-max-score').innerText = state.maxScore;
