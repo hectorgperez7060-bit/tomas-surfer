@@ -260,11 +260,11 @@
         const charNameDisplay = document.getElementById('char-name-display');
 
         const CHARACTERS = [
-            { name: 'Tomas',  modelKey: 'soldier', color: 0xff3b30 },
-            { name: 'Robot',  modelKey: 'robot',   color: null     },
-            { name: 'Paco',   modelKey: 'soldier', color: 0x34c759 },
-            { name: 'Luis',   modelKey: 'soldier', color: 0xffcc00 },
-            { name: 'Leo',    modelKey: 'soldier', color: 0xaf52de }
+            { name: 'Tomas',  modelKey: 'soldier', color: 0xff3b30, rotY: Math.PI },
+            { name: 'Robot',  modelKey: 'robot',   color: null,     rotY: 0       },
+            { name: 'Paco',   modelKey: 'soldier', color: 0x34c759, rotY: Math.PI },
+            { name: 'Luis',   modelKey: 'soldier', color: 0xffcc00, rotY: Math.PI },
+            { name: 'Leo',    modelKey: 'soldier', color: 0xaf52de, rotY: Math.PI }
         ];
         let selectedCharIndex = 0;
 
@@ -573,6 +573,7 @@
             const planeMat = new THREE.MeshBasicMaterial({ map: tex, side: THREE.DoubleSide });
             const plane = new THREE.Mesh(new THREE.PlaneGeometry(8, 4), planeMat);
             plane.position.y = 7;
+            plane.rotation.y = Math.PI;
             group.add(plane);
 
             // Postes
@@ -1145,7 +1146,7 @@
             const modelH = bbox.max.y - bbox.min.y;
             const s = 1.8 / Math.max(modelH, 0.1);
             model.scale.set(s, s, s);
-            model.rotation.y = Math.PI;
+            model.rotation.y = char.rotY;
             model.position.y = 0;
             playerGroup.add(model);
 

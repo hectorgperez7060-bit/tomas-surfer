@@ -4,7 +4,7 @@ function showPopup(titulo, texto) {
   const overlay = document.getElementById('popup-overlay');
   if (!overlay) return;
   document.getElementById('popup-title').textContent = titulo;
-  document.getElementById('popup-body').textContent  = texto;
+  document.getElementById('popup-body').textContent = texto;
   overlay.style.display = 'flex';
 }
 
