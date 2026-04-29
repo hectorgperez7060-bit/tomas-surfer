@@ -488,84 +488,86 @@
             const group = new THREE.Group();
 
             const canvas = document.createElement('canvas');
-            canvas.width = 512;
-            canvas.height = 256;
+            canvas.width = 1024;
+            canvas.height = 512;
             const ctx = canvas.getContext('2d');
 
-            // Fondo azul
-            ctx.fillStyle = '#0d3b8e';
-            ctx.fillRect(0, 0, 512, 256);
+            // Fondo azul oscuro
+            ctx.fillStyle = '#0a2a6e';
+            ctx.fillRect(0, 0, 1024, 512);
 
-            // Borde plateado
-            ctx.strokeStyle = '#c8c8c8';
-            ctx.lineWidth = 8;
-            ctx.strokeRect(4, 4, 504, 248);
-
-            // Franja superior amarilla
+            // Franja naranja superior
             ctx.fillStyle = '#f5a800';
-            ctx.fillRect(4, 4, 504, 54);
+            ctx.fillRect(0, 0, 1024, 110);
 
-            // Título
-            ctx.fillStyle = '#0d3b8e';
-            ctx.font = 'bold 40px Arial Black, Arial';
+            // Texto título en azul sobre naranja
+            ctx.fillStyle = '#0a2a6e';
+            ctx.font = 'bold 82px Arial Black, Impact, Arial';
             ctx.textAlign = 'center';
-            ctx.fillText('ELECTRICIDAD.G.O', 256, 46);
+            ctx.fillText('ELECTRICIDAD.G.O', 512, 88);
 
-            // Rayos
-            ctx.fillStyle = '#f5a800';
-            ctx.font = 'bold 30px Arial';
-            ctx.fillText('⚡', 60, 110);
-            ctx.fillText('⚡', 452, 110);
+            // Rayos decorativos
+            ctx.fillStyle = '#ffffff';
+            ctx.font = '70px Arial';
+            ctx.fillText('⚡', 90, 200);
+            ctx.fillText('⚡', 900, 200);
 
             // Subtítulo
             ctx.fillStyle = '#ffffff';
-            ctx.font = 'bold 28px Arial';
-            ctx.fillText('SOLUCIONES ELÉCTRICAS', 256, 115);
+            ctx.font = 'bold 58px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('SOLUCIONES ELÉCTRICAS', 512, 220);
 
-            // Línea separadora
-            ctx.strokeStyle = 'rgba(255,255,255,0.3)';
-            ctx.lineWidth = 1;
-            ctx.beginPath();
-            ctx.moveTo(30, 132);
-            ctx.lineTo(482, 132);
-            ctx.stroke();
+            // Línea divisoria
+            ctx.strokeStyle = 'rgba(245,168,0,0.6)';
+            ctx.lineWidth = 3;
+            ctx.beginPath(); ctx.moveTo(60, 250); ctx.lineTo(964, 250); ctx.stroke();
 
-            // WhatsApp
+            // Círculo WhatsApp
             ctx.fillStyle = '#25D366';
             ctx.beginPath();
-            ctx.arc(80, 190, 26, 0, Math.PI * 2);
+            ctx.arc(160, 380, 60, 0, Math.PI * 2);
             ctx.fill();
-            ctx.fillStyle = '#ffffff';
-            ctx.font = 'bold 30px Arial';
-            ctx.fillText('✆', 80, 200);
 
+            // Icono teléfono dentro del círculo
             ctx.fillStyle = '#ffffff';
-            ctx.font = 'bold 32px Arial';
+            ctx.font = 'bold 60px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('📱', 160, 400);
+
+            // Número
+            ctx.fillStyle = '#ffffff';
+            ctx.font = 'bold 64px Arial Black, Arial';
             ctx.textAlign = 'left';
-            ctx.fillText('1157007060', 120, 200);
+            ctx.fillText('1157007060', 250, 410);
+
+            // Borde blanco
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 10;
+            ctx.strokeRect(5, 5, 1014, 502);
 
             const texture = new THREE.CanvasTexture(canvas);
 
-            // Panel
-            const faceGeo = new THREE.PlaneGeometry(6, 3);
+            // Panel principal — más grande y cercano
+            const faceGeo = new THREE.PlaneGeometry(8, 4);
             const faceMat = new THREE.MeshBasicMaterial({ map: texture, side: THREE.DoubleSide });
             const face = new THREE.Mesh(faceGeo, faceMat);
             face.position.y = 5.5;
             group.add(face);
 
-            // Marco
-            const frameGeo = new THREE.BoxGeometry(6.4, 3.4, 0.12);
-            const frameMat = new THREE.MeshStandardMaterial({ color: 0x999999, metalness: 0.8, roughness: 0.3 });
+            // Marco metálico
+            const frameGeo = new THREE.BoxGeometry(8.3, 4.3, 0.15);
+            const frameMat = new THREE.MeshStandardMaterial({ color: 0x888888, metalness: 0.9, roughness: 0.2 });
             const frame = new THREE.Mesh(frameGeo, frameMat);
-            frame.position.set(0, 5.5, -0.1);
+            frame.position.set(0, 5.5, -0.12);
             group.add(frame);
 
             // Postes
-            const poleGeo = new THREE.CylinderGeometry(0.12, 0.15, 5.2);
-            const poleMat = new THREE.MeshStandardMaterial({ color: 0x777777, metalness: 0.9 });
-            [-1.8, 1.8].forEach(x => {
+            const poleGeo = new THREE.CylinderGeometry(0.14, 0.18, 5.5);
+            const poleMat = new THREE.MeshStandardMaterial({ color: 0x666666, metalness: 0.9 });
+            [-2.5, 2.5].forEach(x => {
                 const pole = new THREE.Mesh(poleGeo, poleMat);
-                pole.position.set(x, 2.4, 0);
+                pole.position.set(x, 2.5, 0);
                 group.add(pole);
             });
 
@@ -1056,6 +1058,13 @@
                 if (Math.random() > 0.5) spawnScenery(i + Math.random() * 10);
             }
 
+            // Cartel inicial visible al comenzar
+            const b0 = createBillboard();
+            b0.position.set(10, 0, 80);
+            b0.rotation.y = -Math.PI / 7;
+            sceneryGroup.add(b0);
+            activeScenery.push(b0);
+
             document.getElementById('hud-alias').innerText = state.alias;
             document.getElementById('hud-max-score').innerText = state.maxScore;
             updateHUD();
@@ -1184,8 +1193,8 @@
                         if (state.coins > 0 && state.coins % 40 === 0) {
                             const side = Math.random() > 0.5 ? 1 : -1;
                             const billboard = createBillboard();
-                            billboard.position.set(side * 13, 0, playerGroup.position.z + 120);
-                            billboard.rotation.y = side === 1 ? -Math.PI / 7 : Math.PI / 7;
+                            billboard.position.set(side * 10, 0, playerGroup.position.z + 80);
+                            billboard.rotation.y = side === 1 ? -Math.PI / 6 : Math.PI / 6;
                             sceneryGroup.add(billboard);
                             activeScenery.push(billboard);
                         }
