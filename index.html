@@ -486,83 +486,67 @@
 
         function createBillboard() {
             const group = new THREE.Group();
-            const H = 6;
 
-            // --- Postes ---
-            const poleMat = new THREE.MeshStandardMaterial({ color: 0x555555, metalness: 0.9, roughness: 0.3 });
+            // Canvas con el diseño del cartel
+            const cv = document.createElement('canvas');
+            cv.width = 512; cv.height = 256;
+            const cx = cv.getContext('2d');
+
+            // Fondo azul
+            cx.fillStyle = '#0a2a6e';
+            cx.fillRect(0, 0, 512, 256);
+            // Franja naranja superior
+            cx.fillStyle = '#f5a800';
+            cx.fillRect(0, 0, 512, 85);
+            // Título
+            cx.fillStyle = '#0a2a6e';
+            cx.font = 'bold 52px Impact, Arial Black, Arial';
+            cx.textAlign = 'center';
+            cx.textBaseline = 'middle';
+            cx.fillText('ELECTRICIDAD.G.O', 256, 44);
+            // Subtítulo
+            cx.fillStyle = '#ffffff';
+            cx.font = 'bold 34px Arial';
+            cx.fillText('SOLUCIONES ELECTRICAS', 256, 140);
+            // Línea separadora
+            cx.fillStyle = '#f5a800';
+            cx.fillRect(30, 165, 452, 3);
+            // Círculo WhatsApp
+            cx.fillStyle = '#25D366';
+            cx.beginPath();
+            cx.arc(80, 210, 28, 0, Math.PI * 2);
+            cx.fill();
+            cx.fillStyle = '#ffffff';
+            cx.font = 'bold 26px Arial';
+            cx.textAlign = 'center';
+            cx.fillText('W', 80, 213);
+            // Número
+            cx.fillStyle = '#ffffff';
+            cx.font = 'bold 38px Arial Black, Arial';
+            cx.textAlign = 'left';
+            cx.fillText('1157007060', 125, 220);
+            // Borde blanco
+            cx.strokeStyle = '#ffffff';
+            cx.lineWidth = 6;
+            cx.strokeRect(3, 3, 506, 250);
+
+            const tex = new THREE.CanvasTexture(cv);
+            tex.needsUpdate = true;
+
+            // DoubleSide: visible tanto desde -Z como desde +Z
+            const planeMat = new THREE.MeshBasicMaterial({ map: tex, side: THREE.DoubleSide });
+            const plane = new THREE.Mesh(new THREE.PlaneGeometry(8, 4), planeMat);
+            plane.position.y = 6;
+            group.add(plane);
+
+            // Postes
+            const poleMat = new THREE.MeshBasicMaterial({ color: 0x555555 });
             const poleGeo = new THREE.CylinderGeometry(0.12, 0.15, 6);
-            [-2, 2].forEach(x => {
+            [-2.5, 2.5].forEach(x => {
                 const pole = new THREE.Mesh(poleGeo, poleMat);
                 pole.position.set(x, 3, 0);
-                pole.castShadow = true;
                 group.add(pole);
             });
-
-            // Marco trasero (en +Z, la parte de atrás)
-            const frameMat = new THREE.MeshStandardMaterial({ color: 0x999999, metalness: 0.8, roughness: 0.3 });
-            const frameGeo = new THREE.BoxGeometry(7.3, 3.8, 0.06);
-            const frame = new THREE.Mesh(frameGeo, frameMat);
-            frame.position.set(0, H, 0.07);
-            group.add(frame);
-
-            // Panel fondo azul — cara frontal en -Z (hacia el jugador)
-            const bgMat = new THREE.MeshStandardMaterial({ color: 0x0a2a6e, roughness: 0.8 });
-            const bgGeo = new THREE.BoxGeometry(7, 3.5, 0.08);
-            const bg = new THREE.Mesh(bgGeo, bgMat);
-            bg.position.y = H;
-            group.add(bg);
-
-            // Franja naranja superior — en -Z (frente)
-            const stripMat = new THREE.MeshStandardMaterial({ color: 0xf5a800, roughness: 0.7 });
-            const stripGeo = new THREE.BoxGeometry(7, 0.85, 0.1);
-            const strip = new THREE.Mesh(stripGeo, stripMat);
-            strip.position.set(0, H + 1.3, -0.04);
-            group.add(strip);
-
-            // Barra oscura sobre franja (simula texto título)
-            const letMat = new THREE.MeshStandardMaterial({ color: 0x051a50, roughness: 0.8 });
-            const txtGeo = new THREE.BoxGeometry(5.5, 0.45, 0.12);
-            const txt = new THREE.Mesh(txtGeo, letMat);
-            txt.position.set(0, H + 1.3, -0.09);
-            group.add(txt);
-
-            // Bloque blanco subtítulo (simula "SOLUCIONES ELÉCTRICAS")
-            const subMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.9 });
-            const subGeo = new THREE.BoxGeometry(5.8, 0.35, 0.1);
-            const sub = new THREE.Mesh(subGeo, subMat);
-            sub.position.set(0, H + 0.4, -0.08);
-            group.add(sub);
-
-            // Línea divisoria naranja
-            const lineGeo = new THREE.BoxGeometry(6.4, 0.07, 0.1);
-            const lineMat = new THREE.MeshStandardMaterial({ color: 0xf5a800 });
-            const line = new THREE.Mesh(lineGeo, lineMat);
-            line.position.set(0, H - 0.15, -0.08);
-            group.add(line);
-
-            // Círculo verde WhatsApp
-            const waMat = new THREE.MeshStandardMaterial({ color: 0x25D366, roughness: 0.7 });
-            const waGeo = new THREE.CylinderGeometry(0.45, 0.45, 0.12, 20);
-            waGeo.rotateX(Math.PI / 2);
-            const wa = new THREE.Mesh(waGeo, waMat);
-            wa.position.set(-2.3, H - 0.85, -0.09);
-            group.add(wa);
-
-            // Bloque blanco número
-            const numGeo = new THREE.BoxGeometry(3.5, 0.35, 0.1);
-            const numMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.9 });
-            const num = new THREE.Mesh(numGeo, numMat);
-            num.position.set(0.8, H - 0.85, -0.08);
-            group.add(num);
-
-            // Bloques negros (dígitos del número)
-            const digitMat = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.9 });
-            for (let i = 0; i < 10; i++) {
-                const dGeo = new THREE.BoxGeometry(0.22, 0.22, 0.12);
-                const d = new THREE.Mesh(dGeo, digitMat);
-                d.position.set(-1.5 + i * 0.38, H - 0.85, -0.1);
-                group.add(d);
-            }
 
             return group;
         }
