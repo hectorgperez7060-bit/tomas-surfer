@@ -1,4 +1,4 @@
-const CACHE = 'tomas-surfer-v1';
+const CACHE = 'tomas-surfer-v3';
 
 const PRECACHE = [
   '/',
