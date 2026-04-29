@@ -182,11 +182,11 @@
             
             <h3>Selecciona tu Corredor</h3>
             <div class="character-selector">
-                <div class="char-btn selected" style="background-color: #ff3b30;" data-color="0xff3b30" data-name="Tomás"></div>
-                <div class="char-btn" style="background-color: #007aff;" data-color="0x007aff" data-name="Hugo"></div>
-                <div class="char-btn" style="background-color: #34c759;" data-color="0x34c759" data-name="Paco"></div>
-                <div class="char-btn" style="background-color: #ffcc00;" data-color="0xffcc00" data-name="Luis"></div>
-                <div class="char-btn" style="background-color: #af52de;" data-color="0xaf52de" data-name="Leo"></div>
+                <div class="char-btn selected" style="background-color: #ff3b30;" data-char="0"></div>
+                <div class="char-btn" style="background-color: #4466ff;" data-char="1"></div>
+                <div class="char-btn" style="background-color: #34c759;" data-char="2"></div>
+                <div class="char-btn" style="background-color: #ffcc00;" data-char="3"></div>
+                <div class="char-btn" style="background-color: #af52de;" data-char="4"></div>
             </div>
             <div id="char-name-display" style="margin-bottom: 20px; font-weight: bold; color: #aaa;">Tomás</div>
 
@@ -259,76 +259,46 @@
         const charBtns = document.querySelectorAll('.char-btn');
         const charNameDisplay = document.getElementById('char-name-display');
 
+        const CHARACTERS = [
+            { name: 'Tomas',  modelKey: 'soldier', color: 0xff3b30 },
+            { name: 'Robot',  modelKey: 'robot',   color: null     },
+            { name: 'Paco',   modelKey: 'soldier', color: 0x34c759 },
+            { name: 'Luis',   modelKey: 'soldier', color: 0xffcc00 },
+            { name: 'Leo',    modelKey: 'soldier', color: 0xaf52de }
+        ];
+        let selectedCharIndex = 0;
+
         // --- THREE.JS SETUP ---
         const container = document.getElementById('game-container');
         const scene = new THREE.Scene();
         
         // --- ASSET MANAGER (Modelos 3D Reales) ---
-        const assets = {
-            player: null,
-            train: null,
-            car: null
-        };
+        const assets = { train: null, car: null };
+        const charModels = { soldier: null, robot: null };
+        const charAnims  = { soldier: [], robot: [] };
         let playerMixer = null;
         const gltfLoader = new THREE.GLTFLoader();
 
-        function loadModel(path, key) {
-            gltfLoader.load(path, (gltf) => {
-                assets[key] = gltf.scene;
-                // Si el modelo tiene sombras
-                assets[key].traverse((node) => {
-                    if (node.isMesh) {
-                        node.castShadow = true;
-                        node.receiveShadow = true;
-                    }
+        function loadCharModel(url, key) {
+            gltfLoader.load(url, gltf => {
+                charModels[key] = gltf.scene;
+                charAnims[key]  = gltf.animations || [];
+                charModels[key].traverse(n => {
+                    if (n.isMesh) { n.castShadow = true; n.receiveShadow = true; }
                 });
-
-                if (key === 'player') {
-                    // Remover las piezas de bloques
-                    while(playerGroup.children.length > 0){ 
-                        playerGroup.remove(playerGroup.children[0]); 
-                    }
-                    // Escalar y orientar el personaje (Soldier.glb requiere un ajuste)
-                    assets.player.scale.set(1.2, 1.2, 1.2);
-                    assets.player.rotation.y = Math.PI; // Mirar hacia adelante (+Z)
-                    assets.player.position.y = 0;
-                    playerGroup.add(assets.player);
-
-                    if (gltf.animations && gltf.animations.length > 0) {
-                        playerMixer = new THREE.AnimationMixer(assets.player);
-                        
-                        // Buscar la animación de correr ('Run' o 'Running')
-                        let runAnim = gltf.animations[0];
-                        gltf.animations.forEach(anim => {
-                            if (anim.name.toLowerCase().includes('run')) {
-                                runAnim = anim;
-                            }
-                        });
-                        
-                        const action = playerMixer.clipAction(runAnim);
-                        action.play();
-                    }
-                } else if (key === 'car') {
-                    // Achicar drásticamente el camión para que no ocupe toda la pantalla
-                    assets.car.scale.set(0.5, 0.5, 0.5);
-                } else if (key === 'train') {
-                    assets.train.scale.set(1.5, 1.5, 1.5);
-                }
-
-                console.log(`Modelo ${key} cargado exitosamente desde la nube.`);
-            }, undefined, (error) => {
-                console.log(`No se encontró el modelo ${path}. Usando bloques por defecto.`);
-            });
+            }, undefined, () => {});
         }
 
-        // Cargamos modelos directamente desde repositorios públicos para no tener que descargar nada localmente
-        const PLAYER_URL = 'https://raw.githubusercontent.com/mrdoob/three.js/master/examples/models/gltf/Soldier.glb';
-        const TRAIN_URL = 'https://raw.githubusercontent.com/webaverse/assets/master/train.glb';
-        const CAR_URL = 'https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/CesiumMilkTruck/glTF-Binary/CesiumMilkTruck.glb';
+        function loadAsset(url, key, scale) {
+            gltfLoader.load(url, gltf => {
+                assets[key] = gltf.scene;
+                if (scale) assets[key].scale.set(scale, scale, scale);
+            }, undefined, () => {});
+        }
 
-        loadModel(PLAYER_URL, 'player');
-        loadModel(TRAIN_URL, 'train');
-        loadModel(CAR_URL, 'car');
+        loadCharModel('https://raw.githubusercontent.com/mrdoob/three.js/master/examples/models/gltf/Soldier.glb', 'soldier');
+        loadCharModel('https://raw.githubusercontent.com/mrdoob/three.js/master/examples/models/gltf/RobotExpressive/RobotExpressive.glb', 'robot');
+        loadAsset('https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/CesiumMilkTruck/glTF-Binary/CesiumMilkTruck.glb', 'car', 0.5);
         
         scene.background = new THREE.Color(0x87CEEB); 
         scene.fog = new THREE.Fog(0x87CEEB, 40, 150); 
@@ -1118,6 +1088,36 @@
         // Cartel fijo — se repositiona en cada partida
         let fixedBillboard = null;
 
+        function applyCharacterToPlayer() {
+            const char = CHARACTERS[selectedCharIndex];
+            const model = charModels[char.modelKey];
+            const anims = charAnims[char.modelKey];
+
+            while (playerGroup.children.length > 0) playerGroup.remove(playerGroup.children[0]);
+            if (playerMixer) { playerMixer.stopAllAction(); playerMixer = null; }
+
+            if (!model) return;
+
+            model.traverse(n => {
+                if (n.isMesh && n.material) {
+                    n.material = n.material.clone();
+                    if (char.color !== null) n.material.color.setHex(char.color);
+                }
+            });
+
+            model.scale.set(1.2, 1.2, 1.2);
+            model.rotation.y = Math.PI;
+            model.position.y = 0;
+            playerGroup.add(model);
+
+            if (anims.length > 0) {
+                playerMixer = new THREE.AnimationMixer(model);
+                let runAnim = anims[0];
+                anims.forEach(a => { if (a.name.toLowerCase().includes('run')) runAnim = a; });
+                playerMixer.clipAction(runAnim).play();
+            }
+        }
+
         function updateHUD() {
             document.getElementById('hud-score').innerText = Math.floor(state.score);
             document.getElementById('hud-coins').innerText = state.coins;
@@ -1191,6 +1191,7 @@
             monsterGroup.visible = false;
             playerGroup.scale.y = 1.0;
             
+            applyCharacterToPlayer();
             playerGroup.position.set(state.targetX, 0, 0);
             camera.position.set(0, 5, -8);
             trackGroup.position.z = 0;
@@ -1513,19 +1514,12 @@
             renderer.render(scene, camera);
         }
 
-        charBtns.forEach(btn => {
-            btn.addEventListener('click', (e) => {
+        charBtns.forEach((btn, idx) => {
+            btn.addEventListener('click', () => {
                 charBtns.forEach(b => b.classList.remove('selected'));
-                e.target.classList.add('selected');
-                
-                const colorStr = e.target.getAttribute('data-color');
-                state.playerColor = parseInt(colorStr);
-                
-                playerGroup.children[0].material.color.setHex(state.playerColor);
-                playerGroup.children[3].material.color.setHex(state.playerColor);
-                playerGroup.children[4].material.color.setHex(state.playerColor);
-                
-                charNameDisplay.innerText = e.target.getAttribute('data-name');
+                btn.classList.add('selected');
+                selectedCharIndex = parseInt(btn.getAttribute('data-char'));
+                charNameDisplay.innerText = CHARACTERS[selectedCharIndex].name;
             });
         });
 
