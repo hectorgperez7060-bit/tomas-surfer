@@ -1,4 +1,4 @@
-const CACHE = 'tomas-surfer-v4';
+const CACHE = 'tomas-surfer-v7';
 
 // Borrar todos los caches viejos al activar
 self.addEventListener('install', () => self.skipWaiting());
