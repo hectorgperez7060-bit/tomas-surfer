@@ -435,7 +435,20 @@
         const scene = new THREE.Scene();
         
         const assets = { train: null, car: null };
+        const charModels = { soldier: null, robot: null };
+        const charAnims  = { soldier: [], robot: [] };
         const gltfLoader = new THREE.GLTFLoader();
+
+        function loadCharModel(url, key) {
+            gltfLoader.load(url, gltf => {
+                charModels[key] = gltf.scene;
+                charAnims[key]  = gltf.animations || [];
+                charModels[key].traverse(n => {
+                    if (n.isMesh) { n.castShadow = true; n.receiveShadow = true; }
+                });
+                if (CHARACTERS[selectedCharIndex].modelKey === key) setupLoginCharPreview(selectedCharIndex);
+            }, undefined, () => {});
+        }
 
         function loadAsset(url, key, scale) {
             gltfLoader.load(url, gltf => {
@@ -444,6 +457,8 @@
             }, undefined, () => {});
         }
 
+        loadCharModel('https://raw.githubusercontent.com/mrdoob/three.js/master/examples/models/gltf/Soldier.glb', 'soldier');
+        loadCharModel('https://raw.githubusercontent.com/mrdoob/three.js/master/examples/models/gltf/RobotExpressive/RobotExpressive.glb', 'robot');
         loadAsset('https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/CesiumMilkTruck/glTF-Binary/CesiumMilkTruck.glb', 'car', 0.5);
         
         scene.background = new THREE.Color(0x87CEEB); 
@@ -1326,36 +1341,6 @@
             playerGroup.userData = model.userData;
         }
 
-        // --- THREE.JS SETUP ---
-        const container = document.getElementById('game-container');
-        const scene = new THREE.Scene();
-        
-        const assets = { train: null, car: null };
-        const charModels = { soldier: null, robot: null };
-        const charAnims  = { soldier: [], robot: [] };
-        const gltfLoader = new THREE.GLTFLoader();
-
-        function loadCharModel(url, key) {
-            gltfLoader.load(url, gltf => {
-                charModels[key] = gltf.scene;
-                charAnims[key]  = gltf.animations || [];
-                charModels[key].traverse(n => {
-                    if (n.isMesh) { n.castShadow = true; n.receiveShadow = true; }
-                });
-                if (CHARACTERS[selectedCharIndex].modelKey === key) setupLoginCharPreview(selectedCharIndex);
-            }, undefined, () => {});
-        }
-
-        function loadAsset(url, key, scale) {
-            gltfLoader.load(url, gltf => {
-                assets[key] = gltf.scene;
-                if (scale) assets[key].scale.set(scale, scale, scale);
-            }, undefined, () => {});
-        }
-
-        loadCharModel('https://raw.githubusercontent.com/mrdoob/three.js/master/examples/models/gltf/Soldier.glb', 'soldier');
-        loadCharModel('https://raw.githubusercontent.com/mrdoob/three.js/master/examples/models/gltf/RobotExpressive/RobotExpressive.glb', 'robot');
-        loadAsset('https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/CesiumMilkTruck/glTF-Binary/CesiumMilkTruck.glb', 'car', 0.5);
 
         function updateHUD() {
             document.getElementById('hud-score').innerText = Math.floor(state.score);
