@@ -182,13 +182,13 @@
             
             <h3>Selecciona tu Corredor</h3>
             <div class="character-selector">
-                <div class="char-btn selected" style="background-color: #ff3b30;" data-char="0"></div>
-                <div class="char-btn" style="background-color: #4466ff;" data-char="1"></div>
-                <div class="char-btn" style="background-color: #ff8800;" data-char="2"></div>
-                <div class="char-btn" style="background-color: #3d7a2a;" data-char="3"></div>
+                <div class="char-btn selected" style="background-color: #3d7a2a;" data-char="0"></div>
+                <div class="char-btn" style="background-color: #ff3b30;" data-char="1"></div>
+                <div class="char-btn" style="background-color: #4466ff;" data-char="2"></div>
+                <div class="char-btn" style="background-color: #ff8800;" data-char="3"></div>
                 <div class="char-btn" style="background-color: #00aaff;" data-char="4"></div>
             </div>
-            <div id="char-name-display" style="margin-bottom: 20px; font-weight: bold; color: #aaa;">Tomás</div>
+            <div id="char-name-display" style="margin-bottom: 20px; font-weight: bold; color: #aaa;">Zombie</div>
 
             <button id="start-btn">Jugar</button>
             
@@ -260,10 +260,10 @@
         const charNameDisplay = document.getElementById('char-name-display');
 
         const CHARACTERS = [
+            { name: 'Zombie', modelKey: 'zombie',   color: null,     rotY: Math.PI, targetH: 2.4 },
             { name: 'Tomas',  modelKey: 'soldier',  color: 0xff3b30, rotY: Math.PI         },
             { name: 'Robot',  modelKey: 'robot',    color: null,     rotY: 0               },
             { name: 'Tigre',  modelKey: 'horse',    color: 0xff8800, rotY: 0, targetH: 2.2 },
-            { name: 'Zombie', modelKey: 'zombie',  color: null,     rotY: Math.PI, targetH: 2.4 },
             { name: 'Surfer', modelKey: 'michelle', color: null,     rotY: 0               },
         ];
         let selectedCharIndex = 0;
