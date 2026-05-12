@@ -261,12 +261,12 @@
         const charNameDisplay = document.getElementById('char-name-display');
 
         const CHARACTERS = [
-            { name: 'Tomas',  modelKey: 'soldier',  color: 0xff3b30, rotY: Math.PI },
-            { name: 'Robot',  modelKey: 'robot',    color: null,     rotY: 0       },
-            { name: 'Tigre',  modelKey: 'horse',    color: 0xff8800, rotY: Math.PI },
-            { name: 'Zombie', modelKey: 'xbot',     color: 0x3d7a2a, rotY: Math.PI },
-            { name: 'Surfer', modelKey: 'michelle', color: null,     rotY: Math.PI },
-            { name: 'Beto',   modelKey: 'xbot',     color: 0xd4840a, rotY: Math.PI },
+            { name: 'Tomas',  modelKey: 'soldier',  color: 0xff3b30, rotY: Math.PI              },
+            { name: 'Robot',  modelKey: 'robot',    color: null,     rotY: 0                    },
+            { name: 'Tigre',  modelKey: 'horse',    color: 0xff8800, rotY: 0,    targetH: 2.2  },
+            { name: 'Zombie', modelKey: 'xbot',     color: 0x3d7a2a, rotY: 0                    },
+            { name: 'Surfer', modelKey: 'michelle', color: null,     rotY: 0                    },
+            { name: 'Beto',   modelKey: 'xbot',     color: 0xd4840a, rotY: 0                    },
         ];
         let selectedCharIndex = 0;
 
@@ -1145,11 +1145,23 @@
                 }
             });
 
-            // Normalizar altura a ~1.8 unidades independientemente del modelo
+            // Compute height from raw geometry vertices — Box3.setFromObject
+            // is unreliable for skinned meshes without a fully updated matrix chain.
             model.scale.set(1, 1, 1);
-            const bbox = new THREE.Box3().setFromObject(model);
-            const modelH = bbox.max.y - bbox.min.y;
-            const s = 1.8 / Math.max(modelH, 0.1);
+            let minY = Infinity, maxY = -Infinity;
+            model.traverse(n => {
+                if (n.isMesh && n.geometry && n.geometry.attributes.position) {
+                    const pos = n.geometry.attributes.position;
+                    for (let i = 0; i < pos.count; i++) {
+                        const y = pos.getY(i);
+                        if (y < minY) minY = y;
+                        if (y > maxY) maxY = y;
+                    }
+                }
+            });
+            const modelH = (isFinite(minY) && maxY > minY) ? (maxY - minY) : 1.8;
+            const targetH = char.targetH !== undefined ? char.targetH : 1.8;
+            const s = targetH / modelH;
             model.scale.set(s, s, s);
             model.rotation.y = char.rotY;
             model.position.y = 0;
@@ -1158,7 +1170,9 @@
             if (anims.length > 0) {
                 playerMixer = new THREE.AnimationMixer(model);
                 let runAnim = anims[0];
-                anims.forEach(a => { if (a.name.toLowerCase().includes('run')) runAnim = a; });
+                // Prefer walk over default, then run over walk
+                anims.forEach(a => { if (a.name.toLowerCase().includes('walk')) runAnim = a; });
+                anims.forEach(a => { if (a.name.toLowerCase().includes('run'))  runAnim = a; });
                 playerMixer.clipAction(runAnim).play();
             }
         }
