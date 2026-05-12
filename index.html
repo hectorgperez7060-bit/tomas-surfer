@@ -1371,8 +1371,14 @@
                 }
             }
 
-            playerBox.setFromObject(playerGroup);
-            playerBox.expandByScalar(-0.15);
+            // Fixed hitbox — Box3.setFromObject is unreliable for SkinnedMesh.
+            // Scale.y = 0.5 when ducking, 1.0 standing.
+            const _px = playerGroup.position.x;
+            const _py = playerGroup.position.y;
+            const _pz = playerGroup.position.z;
+            const _ph = 1.75 * playerGroup.scale.y;
+            playerBox.min.set(_px - 0.35, _py + 0.05, _pz - 0.35);
+            playerBox.max.set(_px + 0.35, _py + _ph,  _pz + 0.35);
 
             if (state.isInvincible) {
                 state.invincibleTimer -= delta;
