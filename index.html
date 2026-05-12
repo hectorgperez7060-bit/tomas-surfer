@@ -263,8 +263,7 @@
             { name: 'Tomas',  modelKey: 'soldier',  color: 0xff3b30, rotY: Math.PI         },
             { name: 'Robot',  modelKey: 'robot',    color: null,     rotY: 0               },
             { name: 'Tigre',  modelKey: 'horse',    color: 0xff8800, rotY: 0, targetH: 2.2 },
-            { name: 'Zombie', modelKey: 'soldier', color: 0x7aaa6a, rotY: Math.PI,
-              emissive: 0x112211, emissiveIntensity: 0.5, roughness: 1.0, targetH: 6.0 },
+            { name: 'Zombie', modelKey: 'zombie',  color: null,     rotY: Math.PI, targetH: 2.4 },
             { name: 'Surfer', modelKey: 'michelle', color: null,     rotY: 0               },
         ];
         let selectedCharIndex = 0;
@@ -275,8 +274,8 @@
         
         // --- ASSET MANAGER (Modelos 3D Reales) ---
         const assets = { train: null, car: null };
-        const charModels = { soldier: null, robot: null, michelle: null, horse: null };
-        const charAnims  = { soldier: [], robot: [], michelle: [], horse: [] };
+        const charModels = { soldier: null, robot: null, michelle: null, horse: null, zombie: null };
+        const charAnims  = { soldier: [], robot: [], michelle: [], horse: [], zombie: [] };
         let playerMixer = null;
         const gltfLoader = new THREE.GLTFLoader();
 
@@ -301,6 +300,7 @@
         loadCharModel('https://raw.githubusercontent.com/mrdoob/three.js/master/examples/models/gltf/RobotExpressive/RobotExpressive.glb', 'robot');
         loadCharModel('https://raw.githubusercontent.com/mrdoob/three.js/master/examples/models/gltf/Michelle.glb', 'michelle');
         loadCharModel('https://raw.githubusercontent.com/mrdoob/three.js/master/examples/models/gltf/Horse.glb', 'horse');
+        loadCharModel('https://raw.githubusercontent.com/RohanVashisht1234/threejs-zombieshooter-game/main/public/zombie_hazmat.glb', 'zombie');
         loadAsset('https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/CesiumMilkTruck/glTF-Binary/CesiumMilkTruck.glb', 'car', 0.5);
         
         scene.background = new THREE.Color(0x87CEEB); 
