@@ -263,7 +263,7 @@
             { name: 'Tomas',  modelKey: 'soldier',  color: 0xff3b30, rotY: Math.PI         },
             { name: 'Robot',  modelKey: 'robot',    color: null,     rotY: 0               },
             { name: 'Tigre',  modelKey: 'horse',    color: 0xff8800, rotY: 0, targetH: 2.2 },
-            { name: 'Zombie', modelKey: 'zombie',  color: null,     rotY: Math.PI, targetH: 2.4 },
+            { name: 'Zombie', modelKey: 'zombie',  color: null,     rotY: Math.PI, manualScale: 1.3 },
             { name: 'Surfer', modelKey: 'michelle', color: null,     rotY: 0               },
         ];
         let selectedCharIndex = 0;
@@ -1166,9 +1166,14 @@
                 }
             });
 
-            const modelH  = charHeights[char.modelKey] || 1.8;
-            const targetH = char.targetH !== undefined ? char.targetH : 1.8;
-            const s = targetH / modelH;
+            let s;
+            if (char.manualScale !== undefined) {
+                s = char.manualScale;
+            } else {
+                const modelH  = charHeights[char.modelKey] || 1.8;
+                const targetH = char.targetH !== undefined ? char.targetH : 1.8;
+                s = targetH / modelH;
+            }
             model.scale.set(s, s, s);
             model.rotation.y = char.rotY;
             model.position.y = 0;
