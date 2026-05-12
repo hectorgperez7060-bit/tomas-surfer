@@ -187,7 +187,6 @@
                 <div class="char-btn" style="background-color: #ff8800;" data-char="2"></div>
                 <div class="char-btn" style="background-color: #3d7a2a;" data-char="3"></div>
                 <div class="char-btn" style="background-color: #00aaff;" data-char="4"></div>
-                <div class="char-btn" style="background-color: #d4840a;" data-char="5"></div>
             </div>
             <div id="char-name-display" style="margin-bottom: 20px; font-weight: bold; color: #aaa;">Tomás</div>
 
@@ -261,12 +260,11 @@
         const charNameDisplay = document.getElementById('char-name-display');
 
         const CHARACTERS = [
-            { name: 'Tomas',  modelKey: 'soldier',  color: 0xff3b30, rotY: Math.PI              },
-            { name: 'Robot',  modelKey: 'robot',    color: null,     rotY: 0                    },
-            { name: 'Tigre',  modelKey: 'horse',    color: 0xff8800, rotY: 0,    targetH: 2.2  },
-            { name: 'Zombie', modelKey: 'xbot',     color: 0x3d7a2a, rotY: 0                    },
-            { name: 'Surfer', modelKey: 'michelle', color: null,     rotY: 0                    },
-            { name: 'Beto',   modelKey: 'xbot',     color: 0xd4840a, rotY: 0                    },
+            { name: 'Tomas',  modelKey: 'soldier',  color: 0xff3b30, rotY: Math.PI         },
+            { name: 'Robot',  modelKey: 'robot',    color: null,     rotY: 0               },
+            { name: 'Tigre',  modelKey: 'horse',    color: 0xff8800, rotY: 0, targetH: 2.2 },
+            { name: 'Zombie', build: 'zombie'                                               },
+            { name: 'Surfer', modelKey: 'michelle', color: null,     rotY: 0               },
         ];
         let selectedCharIndex = 0;
 
@@ -276,8 +274,8 @@
         
         // --- ASSET MANAGER (Modelos 3D Reales) ---
         const assets = { train: null, car: null };
-        const charModels = { soldier: null, robot: null, xbot: null, michelle: null, horse: null };
-        const charAnims  = { soldier: [], robot: [], xbot: [], michelle: [], horse: [] };
+        const charModels = { soldier: null, robot: null, michelle: null, horse: null };
+        const charAnims  = { soldier: [], robot: [], michelle: [], horse: [] };
         let playerMixer = null;
         const gltfLoader = new THREE.GLTFLoader();
 
@@ -300,7 +298,6 @@
 
         loadCharModel('https://raw.githubusercontent.com/mrdoob/three.js/master/examples/models/gltf/Soldier.glb', 'soldier');
         loadCharModel('https://raw.githubusercontent.com/mrdoob/three.js/master/examples/models/gltf/RobotExpressive/RobotExpressive.glb', 'robot');
-        loadCharModel('https://raw.githubusercontent.com/mrdoob/three.js/master/examples/models/gltf/Xbot.glb', 'xbot');
         loadCharModel('https://raw.githubusercontent.com/mrdoob/three.js/master/examples/models/gltf/Michelle.glb', 'michelle');
         loadCharModel('https://raw.githubusercontent.com/mrdoob/three.js/master/examples/models/gltf/Horse.glb', 'horse');
         loadAsset('https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/CesiumMilkTruck/glTF-Binary/CesiumMilkTruck.glb', 'car', 0.5);
@@ -1128,8 +1125,76 @@
         // Cartel fijo — se repositiona en cada partida
         let fixedBillboard = null;
 
+        function buildZombie() {
+            while (playerGroup.children.length > 0) playerGroup.remove(playerGroup.children[0]);
+            if (playerMixer) { playerMixer.stopAllAction(); playerMixer = null; }
+
+            const skin  = new THREE.MeshStandardMaterial({ color: 0x6b8b5e, roughness: 0.9 });
+            const cloth = new THREE.MeshStandardMaterial({ color: 0x2d2218, roughness: 1.0 });
+            const eye   = new THREE.MeshStandardMaterial({ color: 0xffcc00, emissive: 0xaa8800 });
+            const blood = new THREE.MeshStandardMaterial({ color: 0x8b0000, roughness: 0.8 });
+
+            // [0] Torso
+            const body = new THREE.Mesh(new THREE.BoxGeometry(0.60, 0.68, 0.33), cloth);
+            body.position.set(0, 0.86, 0);
+            body.castShadow = true;
+            playerGroup.add(body);
+
+            // [1] Head (slight tilt for zombie look)
+            const head = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.44, 0.38), skin);
+            head.position.set(0, 1.49, 0.02);
+            head.rotation.z = 0.09;
+            head.castShadow = true;
+            playerGroup.add(head);
+
+            // [2] Face details: eyes + mouth
+            const faceG = new THREE.Group();
+            const eyeGeo = new THREE.BoxGeometry(0.09, 0.07, 0.04);
+            const eL = new THREE.Mesh(eyeGeo, eye); eL.position.set(-0.10, 1.53, 0.21);
+            const eR = new THREE.Mesh(eyeGeo, eye); eR.position.set( 0.10, 1.53, 0.21);
+            const mo = new THREE.Mesh(new THREE.BoxGeometry(0.20, 0.06, 0.04), blood);
+            mo.position.set(0, 1.31, 0.21);
+            faceG.add(eL, eR, mo);
+            playerGroup.add(faceG);
+
+            // [3] Left arm group — pivot at shoulder so run animation works
+            const aLG = new THREE.Group();
+            aLG.position.set(-0.42, 1.18, 0.08);
+            const aLM = new THREE.Mesh(new THREE.BoxGeometry(0.20, 0.54, 0.20), skin);
+            aLM.position.y = -0.27; aLM.castShadow = true;
+            aLG.add(aLM);
+            playerGroup.add(aLG);
+
+            // [4] Right arm group
+            const aRG = new THREE.Group();
+            aRG.position.set( 0.42, 1.18, 0.08);
+            const aRM = new THREE.Mesh(new THREE.BoxGeometry(0.20, 0.54, 0.20), skin);
+            aRM.position.y = -0.27; aRM.castShadow = true;
+            aRG.add(aRM);
+            playerGroup.add(aRG);
+
+            // [5] Left leg group — pivot at hip
+            const lLG = new THREE.Group();
+            lLG.position.set(-0.16, 0.52, 0);
+            const lLM = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.56, 0.24), cloth);
+            lLM.position.y = -0.28; lLM.castShadow = true;
+            lLG.add(lLM);
+            playerGroup.add(lLG);
+
+            // [6] Right leg group
+            const lRG = new THREE.Group();
+            lRG.position.set( 0.16, 0.52, 0);
+            const lRM = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.56, 0.24), cloth);
+            lRM.position.y = -0.28; lRM.castShadow = true;
+            lRG.add(lRM);
+            playerGroup.add(lRG);
+        }
+
         function applyCharacterToPlayer() {
             const char = CHARACTERS[selectedCharIndex];
+
+            if (char.build === 'zombie') { buildZombie(); return; }
+
             const model = charModels[char.modelKey];
             const anims = charAnims[char.modelKey];
 
