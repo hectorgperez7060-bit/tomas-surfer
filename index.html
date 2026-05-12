@@ -274,8 +274,9 @@
         
         // --- ASSET MANAGER (Modelos 3D Reales) ---
         const assets = { train: null, car: null };
-        const charModels = { soldier: null, robot: null, michelle: null, horse: null, zombie: null };
-        const charAnims  = { soldier: [], robot: [], michelle: [], horse: [], zombie: [] };
+        const charModels  = { soldier: null, robot: null, michelle: null, horse: null, zombie: null };
+        const charAnims   = { soldier: [], robot: [], michelle: [], horse: [], zombie: [] };
+        const charHeights = { soldier: 1.8, robot: 1.8, michelle: 1.8, horse: 1.8, zombie: 1.8 };
         let playerMixer = null;
         const gltfLoader = new THREE.GLTFLoader();
 
@@ -286,6 +287,22 @@
                 charModels[key].traverse(n => {
                     if (n.isMesh) { n.castShadow = true; n.receiveShadow = true; }
                 });
+                // Medir altura en T-pose (antes de cualquier animación) con world transforms
+                const m = charModels[key];
+                m.updateMatrixWorld(true);
+                let minY = Infinity, maxY = -Infinity;
+                const _v = new THREE.Vector3();
+                m.traverse(n => {
+                    if (n.isMesh && n.geometry && n.geometry.attributes.position) {
+                        const pos = n.geometry.attributes.position;
+                        for (let i = 0; i < pos.count; i++) {
+                            _v.fromBufferAttribute(pos, i).applyMatrix4(n.matrixWorld);
+                            if (_v.y < minY) minY = _v.y;
+                            if (_v.y > maxY) maxY = _v.y;
+                        }
+                    }
+                });
+                if (isFinite(minY) && maxY > minY) charHeights[key] = maxY - minY;
             }, undefined, () => {});
         }
 
@@ -1149,23 +1166,7 @@
                 }
             });
 
-            // Compute height applying each mesh's world transform so models authored
-            // in non-metre units (e.g. centimetres) are measured correctly.
-            model.scale.set(1, 1, 1);
-            model.updateMatrixWorld(true);
-            let minY = Infinity, maxY = -Infinity;
-            const _vt = new THREE.Vector3();
-            model.traverse(n => {
-                if (n.isMesh && n.geometry && n.geometry.attributes.position) {
-                    const pos = n.geometry.attributes.position;
-                    for (let i = 0; i < pos.count; i++) {
-                        _vt.fromBufferAttribute(pos, i).applyMatrix4(n.matrixWorld);
-                        if (_vt.y < minY) minY = _vt.y;
-                        if (_vt.y > maxY) maxY = _vt.y;
-                    }
-                }
-            });
-            const modelH = (isFinite(minY) && maxY > minY) ? (maxY - minY) : 1.8;
+            const modelH  = charHeights[char.modelKey] || 1.8;
             const targetH = char.targetH !== undefined ? char.targetH : 1.8;
             const s = targetH / modelH;
             model.scale.set(s, s, s);
