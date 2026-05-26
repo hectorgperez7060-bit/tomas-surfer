@@ -277,7 +277,7 @@
             { name: 'El Gatito Mimoso',   modelKey: 'horse',   color: 0xff8800, rotY: 0, targetH: 2.2, tigerStripes: true },
             { name: 'El Come Cerebros',   modelKey: 'soldier', color: 0x4a7a3a, rotY: Math.PI,
               emissive: 0x112211, emissiveIntensity: 0.6, roughness: 1.0, targetH: 2.2, chainsaw: true },
-            { name: 'La Turra Runner',    modelKey: 'michelle', color: 0xff88bb, rotY: Math.PI, targetH: 1.8 }
+            { name: 'La Turra Runner',    modelKey: 'michelle', color: 0xff88bb, rotY: Math.PI, manualScale: 0.012 }
         ];
         let selectedCharIndex = 0;
 
@@ -332,8 +332,39 @@
         loadCharModel('https://raw.githubusercontent.com/mrdoob/three.js/master/examples/models/gltf/Horse.glb', 'horse');
         loadAsset('https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/CesiumMilkTruck/glTF-Binary/CesiumMilkTruck.glb', 'car', 0.5);
         
-        scene.background = new THREE.Color(0x87CEEB); 
-        scene.fog = new THREE.Fog(0x87CEEB, 40, 150); 
+        scene.background = new THREE.Color(0x87CEEB);
+        scene.fog = new THREE.Fog(0x87CEEB, 40, 150);
+
+        // --- Sistema de Ambientes Dinámicos ---
+        const ENVIRONMENTS = [
+            { name: 'dia',    sky: 0x87CEEB, fog: 0x87CEEB,   fogNear: 40, fogFar: 150, ambLight: 0xffffff, ambInt: 0.8 },
+            { name: 'ciudad', sky: 0xc0a090, fog: 0xb09080,   fogNear: 20, fogFar: 80,  ambLight: 0xff9966, ambInt: 0.6 },
+            { name: 'noche',  sky: 0x0a0a20, fog: 0x050510,   fogNear: 15, fogFar: 60,  ambLight: 0x3355aa, ambInt: 0.3 },
+            { name: 'lluvia', sky: 0x445566, fog: 0x334455,   fogNear: 10, fogFar: 50,  ambLight: 0x8899aa, ambInt: 0.5 },
+        ];
+        let currentEnvIndex = 0;
+        let nextEnvIndex = 1;
+        let envProgress = 0; // 0-1 transición entre ambientes
+        let envTimer = 0;    // segundos en el ambiente actual
+        const ENV_DURATION = 30; // segundos por ambiente
+
+        // Partículas de lluvia
+        const rainParticles = (() => {
+            const geo = new THREE.BufferGeometry();
+            const count = 800;
+            const positions = new Float32Array(count * 3);
+            for (let i = 0; i < count; i++) {
+                positions[i*3]   = (Math.random() - 0.5) * 40;
+                positions[i*3+1] = Math.random() * 20;
+                positions[i*3+2] = (Math.random() - 0.5) * 40;
+            }
+            geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            const mat = new THREE.PointsMaterial({ color: 0xaaccff, size: 0.08, transparent: true, opacity: 0.7 });
+            const pts = new THREE.Points(geo, mat);
+            pts.visible = false;
+            scene.add(pts);
+            return pts;
+        })();
 
         const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 200);
         camera.position.set(0, 5, -8);
@@ -1416,6 +1447,11 @@
             state.monsterLife = 0;
             state.monstersDefeated = 0;
             monsterGroup.visible = false;
+            currentEnvIndex = 0; nextEnvIndex = 1; envTimer = 0; envProgress = 0;
+            scene.background.setHex(0x87CEEB);
+            scene.fog.color.setHex(0x87CEEB);
+            scene.fog.near = 40; scene.fog.far = 150;
+            rainParticles.visible = false;
             playerGroup.scale.y = 1.0;
             
             applyCharacterToPlayer();
@@ -1466,6 +1502,44 @@
             state.distance += moveZ;
             state.score += moveZ * 0.1;
             state.scoreWithoutMistakes += moveZ * 0.1;
+
+            // --- Actualizar Ambiente Dinámico ---
+            envTimer += delta;
+            if (envTimer >= ENV_DURATION) {
+                envTimer = 0;
+                currentEnvIndex = nextEnvIndex;
+                nextEnvIndex = (nextEnvIndex + 1) % ENVIRONMENTS.length;
+            }
+            envProgress = envTimer / ENV_DURATION;
+            // Transición de colores entre ambientes
+            const envA = ENVIRONMENTS[currentEnvIndex];
+            const envB = ENVIRONMENTS[nextEnvIndex];
+            const t = Math.min(envProgress * 3, 1); // transición rápida al final del ciclo
+            function lerpColor(a, b, t) {
+                const ar = (a >> 16) & 0xff, ag = (a >> 8) & 0xff, ab = a & 0xff;
+                const br = (b >> 16) & 0xff, bg = (b >> 8) & 0xff, bb = b & 0xff;
+                return ((Math.round(ar + (br-ar)*t) << 16) | (Math.round(ag + (bg-ag)*t) << 8) | Math.round(ab + (bb-ab)*t));
+            }
+            const skyColor = lerpColor(envA.sky, envB.sky, t);
+            const fogColor = lerpColor(envA.fog, envB.fog, t);
+            scene.background.setHex(skyColor);
+            scene.fog.color.setHex(fogColor);
+            scene.fog.near = envA.fogNear + (envB.fogNear - envA.fogNear) * t;
+            scene.fog.far  = envA.fogFar  + (envB.fogFar  - envA.fogFar)  * t;
+            ambientLight.color.setHex(lerpColor(envA.ambLight, envB.ambLight, t));
+            ambientLight.intensity = envA.ambInt + (envB.ambInt - envA.ambInt) * t;
+            // Lluvia visible solo en ambiente lluvia
+            const inRain = (currentEnvIndex === 3 || nextEnvIndex === 3);
+            rainParticles.visible = inRain;
+            if (inRain) {
+                rainParticles.position.set(playerGroup.position.x, playerGroup.position.y + 10, playerGroup.position.z);
+                const rpos = rainParticles.geometry.attributes.position;
+                for (let ri = 0; ri < rpos.count; ri++) {
+                    rpos.setY(ri, rpos.getY(ri) - 15 * delta);
+                    if (rpos.getY(ri) < -2) rpos.setY(ri, 20);
+                }
+                rpos.needsUpdate = true;
+            }
 
             playerGroup.position.z += moveZ;
             
@@ -1787,12 +1861,20 @@
             if (el) el.textContent = msg;
         }
 
-        // Auto-login si hay sesión guardada
+        // Auto-login si hay sesión guardada — pero esperar a que los modelos terminen de cargar
         const savedSession = _loadSession();
         if (savedSession && savedSession.alias) {
             document.getElementById('welcome-msg').textContent = `Bienvenido de vuelta, ${savedSession.alias}!`;
             document.getElementById('alias-input').value = savedSession.alias;
-            setTimeout(() => _startGameWithAlias(savedSession.alias), 1500);
+            function _waitModelsAndStart(alias, attempts) {
+                const allLoaded = charModels.soldier && charModels.robot && charModels.horse && charModels.michelle;
+                if (allLoaded || attempts <= 0) {
+                    _startGameWithAlias(alias);
+                } else {
+                    setTimeout(() => _waitModelsAndStart(alias, attempts - 1), 300);
+                }
+            }
+            setTimeout(() => _waitModelsAndStart(savedSession.alias, 20), 500);
         }
 
         document.getElementById('start-btn').addEventListener('click', () => {
