@@ -277,7 +277,7 @@
             { name: 'El Gatito Mimoso',   modelKey: 'horse',   color: 0xff8800, rotY: 0, targetH: 2.2, tigerStripes: true },
             { name: 'El Come Cerebros',   modelKey: 'soldier', color: 0x4a7a3a, rotY: Math.PI,
               emissive: 0x112211, emissiveIntensity: 0.6, roughness: 1.0, targetH: 2.2, chainsaw: true },
-            { name: 'La Turra Runner',    modelKey: 'michelle', color: 0xff88bb, rotY: Math.PI, manualScale: 0.012 }
+            { name: 'La Turra Runner',    modelKey: 'michelle', color: 0xff88bb, rotY: Math.PI, targetH: 1.7 }
         ];
         let selectedCharIndex = 0;
 
@@ -315,7 +315,10 @@
                         }
                     }
                 });
-                if (isFinite(minY) && maxY > minY) charHeights[key] = maxY - minY;
+                if (isFinite(minY) && maxY > minY) {
+                    charHeights[key] = maxY - minY;
+                    console.log(`[modelo ${key}] altura medida: ${charHeights[key].toFixed(3)}`);
+                }
             }, undefined, () => {});
         }
 
@@ -1358,16 +1361,10 @@
                 playerMixer = new THREE.AnimationMixer(model);
                 let runAnim = anims[0];
                 
-                // Si tiene patineta, usamos una pose estática en lugar de correr
-                if (char.skateboard) {
-                    // Try to find an idle animation
-                    anims.forEach(a => { if (a.name.toLowerCase().includes('idle') || a.name.toLowerCase().includes('pose')) runAnim = a; });
-                    playerMixer.clipAction(runAnim).play();
-                } else {
-                    anims.forEach(a => { if (a.name.toLowerCase().includes('walk')) runAnim = a; });
-                    anims.forEach(a => { if (a.name.toLowerCase().includes('run'))  runAnim = a; });
-                    playerMixer.clipAction(runAnim).play();
-                }
+                // Siempre buscar animación de correr
+                anims.forEach(a => { if (a.name.toLowerCase().includes('walk')) runAnim = a; });
+                anims.forEach(a => { if (a.name.toLowerCase().includes('run'))  runAnim = a; });
+                playerMixer.clipAction(runAnim).play();
             }
         }
 
