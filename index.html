@@ -1861,29 +1861,28 @@
             if (el) el.textContent = msg;
         }
 
-        // Auto-login si hay sesión guardada — pero esperar a que los modelos terminen de cargar
+        // Auto-login: solo pre-rellena el alias, el usuario elige personaje y aprieta Jugar
         const savedSession = _loadSession();
         if (savedSession && savedSession.alias) {
             document.getElementById('welcome-msg').textContent = `Bienvenido de vuelta, ${savedSession.alias}!`;
             document.getElementById('alias-input').value = savedSession.alias;
-            function _waitModelsAndStart(alias, attempts) {
-                const allLoaded = charModels.soldier && charModels.robot && charModels.horse && charModels.michelle;
-                if (allLoaded || attempts <= 0) {
-                    _startGameWithAlias(alias);
-                } else {
-                    setTimeout(() => _waitModelsAndStart(alias, attempts - 1), 300);
-                }
-            }
-            setTimeout(() => _waitModelsAndStart(savedSession.alias, 20), 500);
         }
 
         document.getElementById('start-btn').addEventListener('click', () => {
             const alias = (document.getElementById('alias-input').value || '').trim();
             const pass  = document.getElementById('pass-input').value || '';
             if (!alias) { _showLoginError('Ingresá tu alias.'); return; }
-            if (!pass)  { _showLoginError('Ingresá tu contraseña.'); return; }
 
             const users = _getUsers();
+            const session = _loadSession();
+            // Si hay sesión activa para este alias, no pedir contraseña
+            if (session && session.alias === alias && users[alias]) {
+                _showLoginError('');
+                _startGameWithAlias(alias);
+                return;
+            }
+
+            if (!pass) { _showLoginError('Ingresá tu contraseña.'); return; }
             if (users[alias]) {
                 if (users[alias].pass !== _hashPass(pass)) {
                     _showLoginError('Contraseña incorrecta.');
@@ -1919,8 +1918,8 @@
 
         restartBtn.addEventListener('click', () => {
             gameOverScreen.classList.add('hidden');
-            resetGame();
-            state.isPlaying = true;
+            hud.classList.add('hidden');
+            loginScreen.classList.remove('hidden');
         });
 
         window.addEventListener('resize', () => {
