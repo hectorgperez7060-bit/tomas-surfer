@@ -180,14 +180,20 @@
         <div id="login-screen" class="screen">
             <h1>Tomás Surfer</h1>
 
+            <!-- Bloque A: usuario con sesión guardada -->
+            <div id="session-wrap" style="display:none;margin-bottom:16px;">
+                <div id="welcome-msg" style="color:#CCFF00;font-size:1.1em;font-weight:bold;margin-bottom:12px;"></div>
+                <button id="play-session-btn" style="font-size:1.3em;padding:16px 50px;">▶ Jugar</button>
+                <br><button id="change-user-btn" style="margin-top:10px;background:rgba(255,255,255,0.15);font-size:0.85em;padding:8px 20px;color:#fff;">Cambiar usuario</button>
+            </div>
+
+            <!-- Bloque B: formulario de login/registro -->
             <div id="login-form-wrap">
                 <input type="text" id="alias-input" placeholder="Tu alias / nombre" maxlength="16" autocomplete="username">
                 <input type="password" id="pass-input" placeholder="Contraseña (mín. 4 caracteres)" maxlength="30" autocomplete="current-password"
                     style="padding:15px;font-size:1.1em;border-radius:8px;border:none;margin-bottom:10px;width:80%;text-align:center;background:rgba(255,255,255,0.9);outline:none;">
                 <div id="login-error" style="color:#ff6b6b;font-size:0.9em;min-height:22px;margin-bottom:8px;"></div>
-                <button id="start-btn">Jugar</button>
-                <button id="new-user-btn" style="margin-top:8px;background:linear-gradient(90deg,#667eea,#764ba2);font-size:1em;padding:10px 30px;">Crear cuenta nueva</button>
-                <div id="welcome-msg" style="color:#CCFF00;font-size:1em;min-height:22px;margin-top:8px;font-weight:bold;"></div>
+                <button id="start-btn">Entrar</button>
             </div>
 
             <h3 style="margin-top:20px;">Selecciona tu Corredor</h3>
@@ -199,8 +205,6 @@
                 <div class="char-btn" style="background-color: #ffaaaa;" data-char="4" title="La Turra Runner"></div>
             </div>
             <div id="char-name-display" style="margin-bottom: 20px; font-weight: bold; color: #CCFF00; font-size:1.1em;">Tomás Surfer</div>
-
-            <button id="start-btn-hidden" style="display:none">Jugar</button>
 
             <div class="instructions">
                 <b>Teclado:</b> Flechas para mover/agachar, Espacio para saltar<br>
@@ -1858,35 +1862,50 @@
             if (el) el.textContent = msg;
         }
 
-        // Auto-login: solo pre-rellena el alias, el usuario elige personaje y aprieta Jugar
-        const savedSession = _loadSession();
-        if (savedSession && savedSession.alias) {
-            document.getElementById('welcome-msg').textContent = `Bienvenido de vuelta, ${savedSession.alias}!`;
-            document.getElementById('alias-input').value = savedSession.alias;
+        function _showLoginScreen() {
+            loginScreen.classList.remove('hidden');
+            hud.classList.add('hidden');
+            gameOverScreen.classList.add('hidden');
+            const session = _loadSession();
+            if (session && session.alias) {
+                // Usuario conocido: mostrar botón directo "Jugar"
+                document.getElementById('session-wrap').style.display = 'block';
+                document.getElementById('login-form-wrap').style.display = 'none';
+                document.getElementById('welcome-msg').textContent = `Bienvenido de vuelta, ${session.alias}!`;
+            } else {
+                // Usuario nuevo: mostrar formulario
+                document.getElementById('session-wrap').style.display = 'none';
+                document.getElementById('login-form-wrap').style.display = 'block';
+            }
         }
 
+        // Botón "Jugar" para usuario con sesión guardada
+        document.getElementById('play-session-btn').addEventListener('click', () => {
+            const session = _loadSession();
+            if (session && session.alias) _startGameWithAlias(session.alias);
+        });
+
+        // Botón "Cambiar usuario"
+        document.getElementById('change-user-btn').addEventListener('click', () => {
+            localStorage.removeItem('tsSession');
+            document.getElementById('session-wrap').style.display = 'none';
+            document.getElementById('login-form-wrap').style.display = 'block';
+            document.getElementById('alias-input').value = '';
+            document.getElementById('pass-input').value = '';
+            _showLoginError('');
+        });
+
+        // Botón "Entrar" del formulario (login o registro automático)
         document.getElementById('start-btn').addEventListener('click', () => {
             const alias = (document.getElementById('alias-input').value || '').trim();
             const pass  = document.getElementById('pass-input').value || '';
-            if (!alias) { _showLoginError('Ingresá tu alias.'); return; }
-
+            if (!alias) { _showLoginError('Escribí tu nombre de jugador.'); return; }
+            if (!pass)  { _showLoginError('Escribí una contraseña (mín. 4 caracteres).'); return; }
+            if (pass.length < 4) { _showLoginError('La contraseña debe tener al menos 4 caracteres.'); return; }
             const users = _getUsers();
-            const session = _loadSession();
-            // Si hay sesión activa para este alias, no pedir contraseña
-            if (session && session.alias === alias && users[alias]) {
-                _showLoginError('');
-                _startGameWithAlias(alias);
-                return;
-            }
-
-            if (!pass) { _showLoginError('Ingresá tu contraseña.'); return; }
             if (users[alias]) {
-                if (users[alias].pass !== _hashPass(pass)) {
-                    _showLoginError('Contraseña incorrecta.');
-                    return;
-                }
+                if (users[alias].pass !== _hashPass(pass)) { _showLoginError('Contraseña incorrecta.'); return; }
             } else {
-                if (pass.length < 4) { _showLoginError('La contraseña debe tener al menos 4 caracteres.'); return; }
                 users[alias] = { pass: _hashPass(pass), best: 0 };
                 _saveUsers(users);
             }
@@ -1895,29 +1914,19 @@
             _startGameWithAlias(alias);
         });
 
-        document.getElementById('new-user-btn').addEventListener('click', () => {
-            const alias = (document.getElementById('alias-input').value || '').trim();
-            const pass  = document.getElementById('pass-input').value || '';
-            if (!alias) { _showLoginError('Ingresá un alias.'); return; }
-            if (pass.length < 4) { _showLoginError('La contraseña debe tener al menos 4 caracteres.'); return; }
-            const users = _getUsers();
-            if (users[alias]) { _showLoginError('Ese alias ya existe. Usá tu contraseña.'); return; }
-            users[alias] = { pass: _hashPass(pass), best: 0 };
-            _saveUsers(users);
-            _saveSession(alias);
-            _showLoginError('');
-            _startGameWithAlias(alias);
-        });
-
-        document.getElementById('pass-input')?.addEventListener('keydown', e => {
+        document.getElementById('pass-input').addEventListener('keydown', e => {
             if (e.key === 'Enter') document.getElementById('start-btn').click();
+        });
+        document.getElementById('alias-input').addEventListener('keydown', e => {
+            if (e.key === 'Enter') document.getElementById('pass-input').focus();
         });
 
         restartBtn.addEventListener('click', () => {
-            gameOverScreen.classList.add('hidden');
-            hud.classList.add('hidden');
-            loginScreen.classList.remove('hidden');
+            _showLoginScreen();
         });
+
+        // Mostrar pantalla correcta al cargar
+        _showLoginScreen();
 
         window.addEventListener('resize', () => {
             camera.aspect = window.innerWidth / window.innerHeight;
