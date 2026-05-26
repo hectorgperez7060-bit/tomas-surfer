@@ -170,28 +170,38 @@
         <div class="hud-right">
             <div>Max: <span id="hud-max-score">0</span></div>
             <div>Puntos: <span id="hud-score">0</span></div>
-            <div style="color:#ffd700;">Monedas: <span id="hud-coins">0</span></div>
-            <div id="hud-monster" class="hidden" style="color:#00ffff; margin-top:5px; font-size:0.8em; text-shadow:1px 1px 2px #000;">Jefe: <span id="hud-monster-life">10</span>★</div>
+            <div style="color:#ffd700;">⬤ Anillos: <span id="hud-coins">0</span></div>
+            <div style="color:#00ccff;">★ Estrellas: <span id="hud-stars">0</span></div>
+            <div id="hud-monster" class="hidden" style="color:#ff4444; margin-top:5px; font-size:0.8em; text-shadow:1px 1px 2px #000;">⚠ Jefe: <span id="hud-monster-life">10</span>★ para matar</div>
         </div>
     </div>
 
     <div id="ui-layer">
         <div id="login-screen" class="screen">
             <h1>Tomás Surfer</h1>
-            <input type="text" id="alias-input" placeholder="Ingresa tu Alias" maxlength="12">
-            
-            <h3>Selecciona tu Corredor</h3>
-            <div class="character-selector">
-                <div class="char-btn selected" style="background-color: #ff3b30;" data-char="0"></div>
-                <div class="char-btn" style="background-color: #4466ff;" data-char="1"></div>
-                <div class="char-btn" style="background-color: #ff8800;" data-char="2"></div>
-                <div class="char-btn" style="background-color: #3d7a2a;" data-char="3"></div>
-                <div class="char-btn" style="background-color: #00aaff;" data-char="4"></div>
-            </div>
-            <div id="char-name-display" style="margin-bottom: 20px; font-weight: bold; color: #aaa;">Tomás</div>
 
-            <button id="start-btn">Jugar</button>
-            
+            <div id="login-form-wrap">
+                <input type="text" id="alias-input" placeholder="Tu alias / nombre" maxlength="16" autocomplete="username">
+                <input type="password" id="pass-input" placeholder="Contraseña (mín. 4 caracteres)" maxlength="30" autocomplete="current-password"
+                    style="padding:15px;font-size:1.1em;border-radius:8px;border:none;margin-bottom:10px;width:80%;text-align:center;background:rgba(255,255,255,0.9);outline:none;">
+                <div id="login-error" style="color:#ff6b6b;font-size:0.9em;min-height:22px;margin-bottom:8px;"></div>
+                <button id="start-btn">Jugar</button>
+                <button id="new-user-btn" style="margin-top:8px;background:linear-gradient(90deg,#667eea,#764ba2);font-size:1em;padding:10px 30px;">Crear cuenta nueva</button>
+                <div id="welcome-msg" style="color:#CCFF00;font-size:1em;min-height:22px;margin-top:8px;font-weight:bold;"></div>
+            </div>
+
+            <h3 style="margin-top:20px;">Selecciona tu Corredor</h3>
+            <div class="character-selector">
+                <div class="char-btn selected" style="background-color: #0055ff;" data-char="0" title="Tomás Surfer"></div>
+                <div class="char-btn" style="background-color: #00aaff;" data-char="1" title="Tuerquita Quemada"></div>
+                <div class="char-btn" style="background-color: #ff8800;" data-char="2" title="El Gatito Mimoso"></div>
+                <div class="char-btn" style="background-color: #4a7a3a;" data-char="3" title="El Come Cerebros"></div>
+                <div class="char-btn" style="background-color: #ffaaaa;" data-char="4" title="La Turra Runner"></div>
+            </div>
+            <div id="char-name-display" style="margin-bottom: 20px; font-weight: bold; color: #CCFF00; font-size:1.1em;">Tomás Surfer</div>
+
+            <button id="start-btn-hidden" style="display:none">Jugar</button>
+
             <div class="instructions">
                 <b>Teclado:</b> Flechas para mover/agachar, Espacio para saltar<br>
                 <b>Móvil:</b> Desliza (Swipe) Izquierda/Derecha/Arriba/Abajo
@@ -244,7 +254,9 @@
             monsterTimer: 0,
             monsterType: 0,
             monsterLife: 0,
-            monstersDefeated: 0
+            monstersDefeated: 0,
+            stars: 0,
+            ringsThisLife: 0
         };
 
         // --- DOM ELEMENTS ---
@@ -260,12 +272,12 @@
         const charNameDisplay = document.getElementById('char-name-display');
 
         const CHARACTERS = [
-            { name: 'Tomas',  modelKey: 'soldier',  color: 0xff3b30, rotY: Math.PI         },
-            { name: 'Robot',  modelKey: 'robot',    color: null,     rotY: 0               },
-            { name: 'Tigre',  modelKey: 'horse',    color: 0xff8800, rotY: 0, targetH: 2.2 },
-            { name: 'Zombie', modelKey: 'soldier',  color: 0x4a7a3a, rotY: Math.PI,
+            { name: 'Tomás Surfer',       modelKey: 'soldier', color: 0x0055ff, rotY: Math.PI, skateboard: true },
+            { name: 'Tuerquita Quemada',  modelKey: 'robot',   color: 0x00aaff, rotY: 0, blackEdges: true },
+            { name: 'El Gatito Mimoso',   modelKey: 'horse',   color: 0xff8800, rotY: 0, targetH: 2.2, tigerStripes: true },
+            { name: 'El Come Cerebros',   modelKey: 'soldier', color: 0x4a7a3a, rotY: Math.PI,
               emissive: 0x112211, emissiveIntensity: 0.6, roughness: 1.0, targetH: 2.2, chainsaw: true },
-            { name: 'Surfer', modelKey: 'michelle', color: null,     rotY: 0, manualScale: 1.08 },
+            { name: 'La Turra Runner',    modelKey: 'michelle', color: 0xff88bb, rotY: Math.PI, targetH: 1.8 }
         ];
         let selectedCharIndex = 0;
 
@@ -1174,53 +1186,165 @@
                 const targetH = char.targetH !== undefined ? char.targetH : 1.8;
                 s = targetH / modelH;
             }
-            model.scale.set(s, s, s);
+            
+            if (char.fat) {
+                model.scale.set(s * 1.8, s, s * 1.8);
+            } else {
+                model.scale.set(s, s, s);
+            }
+            
             model.rotation.y = char.rotY;
-            model.position.y = 0;
+            model.position.y = char.skateboard ? 0.2 : 0; // Levantar un poco si tiene patineta
             playerGroup.add(model);
 
+            // 1. Skateboard
+            if (char.skateboard) {
+                const boardGroup = new THREE.Group();
+                const board = new THREE.Mesh(
+                    new THREE.BoxGeometry(0.4, 0.05, 1.2),
+                    new THREE.MeshStandardMaterial({ color: 0x882222, roughness: 0.8 })
+                );
+                board.position.y = 0.1;
+                boardGroup.add(board);
+                
+                const wheelGeo = new THREE.CylinderGeometry(0.06, 0.06, 0.3, 8);
+                wheelGeo.rotateZ(Math.PI / 2);
+                const wheelMat = new THREE.MeshStandardMaterial({ color: 0x111111 });
+                
+                const w1 = new THREE.Mesh(wheelGeo, wheelMat); w1.position.set(0, 0.06, 0.4); boardGroup.add(w1);
+                const w2 = new THREE.Mesh(wheelGeo, wheelMat); w2.position.set(0, 0.06, -0.4); boardGroup.add(w2);
+                
+                boardGroup.position.set(0, 0, 0);
+                playerGroup.add(boardGroup);
+            }
+
+            // 2. Black Edges (Robot Azul)
+            if (char.blackEdges) {
+                model.traverse(n => {
+                    if (n.isMesh && n.material) {
+                        n.material.color.setHex(0x0055ff); // Azul principal
+                        const edgeGeo = new THREE.EdgesGeometry(n.geometry);
+                        const edgeMat = new THREE.LineBasicMaterial({ color: 0x000000, linewidth: 2 });
+                        const edges = new THREE.LineSegments(edgeGeo, edgeMat);
+                        n.add(edges);
+                    }
+                });
+            }
+
+            // 3. Tiger Stripes (Tigre Naranja)
+            if (char.tigerStripes) {
+                model.traverse(n => {
+                    if (n.isMesh && n.material) {
+                        n.material.color.setHex(0xff7700);
+                        // Crear una textura procedural con canvas para las rayas
+                        const cv = document.createElement('canvas');
+                        cv.width = 256; cv.height = 256;
+                        const ctx = cv.getContext('2d');
+                        ctx.fillStyle = '#ff7700'; ctx.fillRect(0,0,256,256);
+                        ctx.strokeStyle = '#000000';
+                        for(let i=0; i<10; i++) {
+                            ctx.beginPath();
+                            ctx.moveTo(Math.random()*256, 0);
+                            ctx.lineTo(Math.random()*256, 256);
+                            ctx.lineWidth = 5 + Math.random() * 10;
+                            ctx.stroke();
+                        }
+                        const tex = new THREE.CanvasTexture(cv);
+                        n.material.map = tex;
+                        n.material.needsUpdate = true;
+                    }
+                });
+            }
+
+            // 4. Chainsaw Realista
             if (char.chainsaw) {
                 const cs = new THREE.Group();
-                cs.position.set(0.5, 0.85, 0.1);
-                cs.rotation.z = -0.4;
-                // Cuerpo naranja
-                const cBody = new THREE.Mesh(
-                    new THREE.BoxGeometry(0.12, 0.1, 0.5),
-                    new THREE.MeshLambertMaterial({ color: 0xff5500 })
+                cs.position.set(0.6, 0.9, 0.3); // Ajustado para que esté en la mano
+                cs.rotation.x = Math.PI / 4;
+                
+                // Motor
+                const motor = new THREE.Mesh(
+                    new THREE.BoxGeometry(0.2, 0.2, 0.4),
+                    new THREE.MeshStandardMaterial({ color: 0xff3300, roughness: 0.5 })
                 );
-                cs.add(cBody);
-                // Hoja gris
-                const cBlade = new THREE.Mesh(
-                    new THREE.BoxGeometry(0.04, 0.02, 0.55),
-                    new THREE.MeshLambertMaterial({ color: 0x888888 })
+                cs.add(motor);
+                
+                // Mango
+                const handle = new THREE.Mesh(
+                    new THREE.TorusGeometry(0.15, 0.03, 8, 16),
+                    new THREE.MeshStandardMaterial({ color: 0x222222 })
                 );
-                cBlade.position.set(0, 0, 0.5);
-                cs.add(cBlade);
-                // Dientes
-                for (let i = 0; i < 5; i++) {
+                handle.rotation.y = Math.PI / 2;
+                handle.position.set(0, 0.1, -0.1);
+                cs.add(handle);
+                
+                // Hoja
+                const blade = new THREE.Mesh(
+                    new THREE.BoxGeometry(0.04, 0.1, 0.7),
+                    new THREE.MeshStandardMaterial({ color: 0xaaaaaa, metalness: 0.8 })
+                );
+                blade.position.set(0, 0, 0.4);
+                cs.add(blade);
+                
+                // Dientes ensangrentados
+                for (let i = 0; i < 8; i++) {
                     const tooth = new THREE.Mesh(
-                        new THREE.BoxGeometry(0.03, 0.06, 0.02),
-                        new THREE.MeshLambertMaterial({ color: 0xaaaaaa })
+                        new THREE.ConeGeometry(0.03, 0.05, 4),
+                        new THREE.MeshStandardMaterial({ color: 0xff0000 })
                     );
-                    tooth.position.set(0, 0.04, 0.25 + i * 0.07);
+                    tooth.rotation.x = Math.PI / 2;
+                    tooth.position.set(0, 0.05, 0.1 + i * 0.08);
                     cs.add(tooth);
                 }
                 playerGroup.add(cs);
             }
 
+            // 5. Hamburguesa (Gordito)
+            if (char.hamburger) {
+                const burger = new THREE.Group();
+                burger.position.set(0.6, 1.0, 0.3); // En la mano
+                
+                const bunMat = new THREE.MeshStandardMaterial({ color: 0xddaa55, roughness: 0.9 });
+                const meatMat = new THREE.MeshStandardMaterial({ color: 0x552200, roughness: 1.0 });
+                const lettuceMat = new THREE.MeshStandardMaterial({ color: 0x00ff00, roughness: 0.8 });
+                
+                const bottomBun = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.12, 0.05, 16), bunMat);
+                bottomBun.position.y = -0.05; burger.add(bottomBun);
+                
+                const meat = new THREE.Mesh(new THREE.CylinderGeometry(0.13, 0.13, 0.06, 16), meatMat);
+                burger.add(meat);
+                
+                const lettuce = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.14, 0.02, 16), lettuceMat);
+                lettuce.position.y = 0.04; burger.add(lettuce);
+                
+                const topBun = new THREE.Mesh(new THREE.SphereGeometry(0.12, 16, 16, 0, Math.PI*2, 0, Math.PI/2), bunMat);
+                topBun.position.y = 0.05; burger.add(topBun);
+                
+                playerGroup.add(burger);
+            }
+
             if (anims.length > 0) {
                 playerMixer = new THREE.AnimationMixer(model);
                 let runAnim = anims[0];
-                // Prefer walk over default, then run over walk
-                anims.forEach(a => { if (a.name.toLowerCase().includes('walk')) runAnim = a; });
-                anims.forEach(a => { if (a.name.toLowerCase().includes('run'))  runAnim = a; });
-                playerMixer.clipAction(runAnim).play();
+                
+                // Si tiene patineta, usamos una pose estática en lugar de correr
+                if (char.skateboard) {
+                    // Try to find an idle animation
+                    anims.forEach(a => { if (a.name.toLowerCase().includes('idle') || a.name.toLowerCase().includes('pose')) runAnim = a; });
+                    playerMixer.clipAction(runAnim).play();
+                } else {
+                    anims.forEach(a => { if (a.name.toLowerCase().includes('walk')) runAnim = a; });
+                    anims.forEach(a => { if (a.name.toLowerCase().includes('run'))  runAnim = a; });
+                    playerMixer.clipAction(runAnim).play();
+                }
             }
         }
 
         function updateHUD() {
             document.getElementById('hud-score').innerText = Math.floor(state.score);
             document.getElementById('hud-coins').innerText = state.coins;
+            const starsEl = document.getElementById('hud-stars');
+            if (starsEl) starsEl.innerText = state.stars;
             
             const livesEl = document.getElementById('hud-lives');
             livesEl.innerHTML = '';
@@ -1240,6 +1364,7 @@
             if (state.isInvincible) return;
 
             state.lives--;
+            state.ringsThisLife = 0;
             // NO reiniciar monstersDefeated para que no vuelva al monstruo 1
             // Si el jefe estaba activo, lo escondemos un rato para dar respiro
             if (state.monsterActive) {
@@ -1272,6 +1397,8 @@
             state.score = 0;
             state.scoreWithoutMistakes = 0;
             state.coins = 0;
+            state.stars = 0;
+            state.ringsThisLife = 0;
             state.lives = 3;
             state.speed = config.speedBase;
             state.distance = 0;
@@ -1465,8 +1592,9 @@
                 if (playerBox.intersectsBox(objBox)) {
                     if (obj.userData.type === 'coin') {
                         state.coins++;
+                        state.ringsThisLife++;
                         state.score += 10;
-                        if (state.coins > 0 && state.coins % 40 === 0) {
+                        if (state.coins > 0 && state.coins % 20 === 0) {
                             const side = Math.random() > 0.5 ? 1 : -1;
                             const billboard = createBillboard();
                             billboard.position.set(side * 9, 0, playerGroup.position.z + 80);
@@ -1480,12 +1608,14 @@
                         activeObjects.splice(i, 1);
                         continue;
                     } else if (obj.userData.type === 'star') {
+                        state.stars++;
                         state.score += 50;
                         if (state.monsterActive) {
                             state.monsterLife--;
                             if (state.monsterLife <= 0) {
                                 state.monsterActive = false;
                                 state.monstersDefeated++;
+                                state.stars = 0;
                             }
                         }
                         updateHUD();
@@ -1529,30 +1659,30 @@
 
             // --- Lógica de Monstruos ---
             if (!state.monsterActive) {
-                if (state.monstersDefeated === 0 && state.score > 300) {
+                if (state.monstersDefeated === 0 && state.ringsThisLife >= 40) {
                     state.monsterActive = true;
                     state.monsterType = 1;
-                    state.monsterLife = 3; // Menos vida para que sea posible ganarle
+                    state.monsterLife = 10; // Robot Volador: matar con 10 estrellas
                     rockMonsterMesh.visible = true;
                     tentacleMonsterMesh.visible = false;
                     ufoMonsterMesh.visible = false;
                     monsterGroup.visible = true;
                     monsterGroup.position.set(0, 8, playerGroup.position.z + 100);
                     updateHUD();
-                } else if (state.monstersDefeated === 1 && state.score > 800) { 
+                } else if (state.monstersDefeated === 1 && state.ringsThisLife >= 80) {
                     state.monsterActive = true;
                     state.monsterType = 2;
-                    state.monsterLife = 5;
+                    state.monsterLife = 20; // Pulpo Slime: matar con 20 estrellas
                     rockMonsterMesh.visible = false;
                     tentacleMonsterMesh.visible = true;
                     ufoMonsterMesh.visible = false;
                     monsterGroup.visible = true;
                     monsterGroup.position.set(0, 8, playerGroup.position.z + 100);
                     updateHUD();
-                } else if (state.monstersDefeated === 2 && state.score > 1500) {
+                } else if (state.monstersDefeated === 2 && state.ringsThisLife >= 120) {
                     state.monsterActive = true;
                     state.monsterType = 3;
-                    state.monsterLife = 7;
+                    state.monsterLife = 30; // Lanza Autos: matar con 30 estrellas
                     rockMonsterMesh.visible = false;
                     tentacleMonsterMesh.visible = false;
                     ufoMonsterMesh.visible = true;
@@ -1629,15 +1759,80 @@
             });
         });
 
-        startBtn.addEventListener('click', () => {
-            const alias = aliasInput.value.trim() || 'Guest';
+        // ── SISTEMA DE LOGIN CON CONTRASEÑA ─────────────────────────────────
+        function _hashPass(str) {
+            let h = 0;
+            for (let i = 0; i < str.length; i++) { h = ((h << 5) - h) + str.charCodeAt(i); h |= 0; }
+            return h.toString(16);
+        }
+        function _getUsers() { return JSON.parse(localStorage.getItem('tsUsers') || '{}'); }
+        function _saveUsers(u) { localStorage.setItem('tsUsers', JSON.stringify(u)); }
+        function _saveSession(name) { localStorage.setItem('tsSession', JSON.stringify({ alias: name })); }
+        function _loadSession() {
+            try { return JSON.parse(localStorage.getItem('tsSession') || 'null'); } catch { return null; }
+        }
+
+        function _startGameWithAlias(alias) {
             state.alias = alias;
-            
+            const users = _getUsers();
+            state.maxScore = (users[alias] && users[alias].best) ? users[alias].best : 0;
             loginScreen.classList.add('hidden');
             hud.classList.remove('hidden');
-            
             resetGame();
             state.isPlaying = true;
+        }
+
+        function _showLoginError(msg) {
+            const el = document.getElementById('login-error');
+            if (el) el.textContent = msg;
+        }
+
+        // Auto-login si hay sesión guardada
+        const savedSession = _loadSession();
+        if (savedSession && savedSession.alias) {
+            document.getElementById('welcome-msg').textContent = `Bienvenido de vuelta, ${savedSession.alias}!`;
+            document.getElementById('alias-input').value = savedSession.alias;
+            setTimeout(() => _startGameWithAlias(savedSession.alias), 1500);
+        }
+
+        document.getElementById('start-btn').addEventListener('click', () => {
+            const alias = (document.getElementById('alias-input').value || '').trim();
+            const pass  = document.getElementById('pass-input').value || '';
+            if (!alias) { _showLoginError('Ingresá tu alias.'); return; }
+            if (!pass)  { _showLoginError('Ingresá tu contraseña.'); return; }
+
+            const users = _getUsers();
+            if (users[alias]) {
+                if (users[alias].pass !== _hashPass(pass)) {
+                    _showLoginError('Contraseña incorrecta.');
+                    return;
+                }
+            } else {
+                if (pass.length < 4) { _showLoginError('La contraseña debe tener al menos 4 caracteres.'); return; }
+                users[alias] = { pass: _hashPass(pass), best: 0 };
+                _saveUsers(users);
+            }
+            _saveSession(alias);
+            _showLoginError('');
+            _startGameWithAlias(alias);
+        });
+
+        document.getElementById('new-user-btn').addEventListener('click', () => {
+            const alias = (document.getElementById('alias-input').value || '').trim();
+            const pass  = document.getElementById('pass-input').value || '';
+            if (!alias) { _showLoginError('Ingresá un alias.'); return; }
+            if (pass.length < 4) { _showLoginError('La contraseña debe tener al menos 4 caracteres.'); return; }
+            const users = _getUsers();
+            if (users[alias]) { _showLoginError('Ese alias ya existe. Usá tu contraseña.'); return; }
+            users[alias] = { pass: _hashPass(pass), best: 0 };
+            _saveUsers(users);
+            _saveSession(alias);
+            _showLoginError('');
+            _startGameWithAlias(alias);
+        });
+
+        document.getElementById('pass-input')?.addEventListener('keydown', e => {
+            if (e.key === 'Enter') document.getElementById('start-btn').click();
         });
 
         restartBtn.addEventListener('click', () => {
